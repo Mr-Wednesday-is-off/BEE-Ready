@@ -1,0 +1,1441 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Bee Ready</title>
+<meta name="description" content="Spelling bee practice: hear the word, spell it, fill the hive. Works offline.">
+<meta name="theme-color" content="#FFF7E0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#17120A" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Bee Ready">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<style>
+@font-face{font-family:"Baloo 2";font-style:normal;font-weight:600;font-display:swap;src:url(fonts/baloo-2-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Baloo 2";font-style:normal;font-weight:700;font-display:swap;src:url(fonts/baloo-2-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Baloo 2";font-style:normal;font-weight:800;font-display:swap;src:url(fonts/baloo-2-latin-800-normal.woff2) format("woff2")}
+@font-face{font-family:"Atkinson Hyperlegible";font-style:normal;font-weight:400;font-display:swap;src:url(fonts/atkinson-hyperlegible-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Atkinson Hyperlegible";font-style:normal;font-weight:700;font-display:swap;src:url(fonts/atkinson-hyperlegible-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Atkinson Hyperlegible";font-style:italic;font-weight:400;font-display:swap;src:url(fonts/atkinson-hyperlegible-latin-400-italic.woff2) format("woff2")}
+</style>
+<style>
+/* Layout: one phone-width column; a honeycomb that fills as words are mastered is the home screen's centerpiece. */
+:root{
+  --paper:#FFF7E0; --card:#FFFFFF; --ink:#2B2113; --ink-soft:#6B5A3E;
+  --honey:#F0A30A; --honey-deep:#A86400; --wax:#F4E2B4; --line:#E6D3A2;
+  --good:#257A43; --good-soft:#DDF1E2; --miss:#C23B25; --miss-soft:#F9DCD5;
+  --on-honey:#2B2113; --placard:#FFFFFF; --placard-ink:#111111;
+  --f-display:"Baloo 2", "Trebuchet MS", system-ui, sans-serif;
+  --f-body:"Atkinson Hyperlegible", Verdana, system-ui, sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#17120A; --card:#241B0F; --ink:#FBEFD4; --ink-soft:#C2AE88;
+    --honey:#FFB82E; --honey-deep:#FFCF6B; --wax:#3A2D17; --line:#3B2E19;
+    --good:#5CC781; --good-soft:#1E3324; --miss:#FF7A63; --miss-soft:#3D1F18;
+    --placard:#F7F1E3; --placard-ink:#111111; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#17120A; --card:#241B0F; --ink:#FBEFD4; --ink-soft:#C2AE88;
+  --honey:#FFB82E; --honey-deep:#FFCF6B; --wax:#3A2D17; --line:#3B2E19;
+  --good:#5CC781; --good-soft:#1E3324; --miss:#FF7A63; --miss-soft:#3D1F18;
+  --placard:#F7F1E3; --placard-ink:#111111; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--paper)}
+body{color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5;padding-inline:16px;padding-block:12px 40px}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--f-display);line-height:1.1;margin:0;text-wrap:balance}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:8px}
+.brand h1{font-size:1.7rem;font-weight:800;letter-spacing:-.01em}
+.honeypot{display:flex;align-items:center;gap:6px;font-family:var(--f-display);font-weight:700;font-size:1.1rem;font-variant-numeric:tabular-nums}
+.iconbtn{background:none;border:1.5px solid var(--line);border-radius:999px;width:38px;height:38px;display:grid;place-items:center;flex:none}
+.iconbtn svg{width:18px;height:18px}
+
+/* Placard */
+.placard{background:var(--placard);color:var(--placard-ink);border:2px solid #111;border-radius:6px;padding:10px 16px 12px;display:flex;align-items:center;gap:14px;box-shadow:0 3px 0 #111}
+.placard .num{font-family:var(--f-display);font-weight:800;font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums;min-width:2.2ch;text-align:center}
+.placard .who{display:flex;flex-direction:column;min-width:0;flex:1}
+.placard label{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+.placard input{font-family:var(--f-display);font-weight:700;font-size:1.4rem;border:none;border-bottom:2px dashed #999;background:transparent;color:#111;padding:0;width:100%;min-width:0}
+.placard input::placeholder{color:#888}
+
+/* Segmented list picker */
+.seg{display:grid;grid-template-columns:repeat(4,1fr);background:var(--wax);border-radius:999px;padding:4px;gap:4px}
+.seg button{border:none;background:transparent;border-radius:999px;padding:8px 6px;font-family:var(--f-display);font-weight:700;font-size:1rem}
+.seg button{transition:background .15s,color .15s}
+.seg button[aria-pressed="true"]{background:var(--honey);color:var(--on-honey);box-shadow:0 2px 0 var(--honey-deep)}
+.listnote{margin:-6px 0 0;text-align:center;font-size:.95rem}
+.listnote b{font-family:var(--f-display);color:var(--honey-deep)}
+.glist{font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
+
+/* Mode buttons */
+.modes{display:flex;flex-direction:column;gap:10px}
+.mode{display:flex;align-items:center;gap:14px;text-align:left;background:var(--card);border:2px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.mode.main{background:var(--honey);border-color:var(--honey);color:var(--on-honey)}
+.mode .hexicon{width:46px;height:52px;flex:none;display:grid;place-items:center;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:var(--wax)}
+.mode.main .hexicon{background:rgba(255,255,255,.55)}
+.mode .hexicon svg{width:24px;height:24px}
+.mode b{font-family:var(--f-display);font-size:1.25rem;display:block;line-height:1.15}
+.mode span{font-size:.9rem;opacity:.85}
+.mode .pts{margin-left:auto;font-family:var(--f-display);font-weight:700;white-space:nowrap}
+
+.tricky{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--miss-soft);border-radius:var(--r);padding:10px 14px}
+.tricky p{margin:0;font-size:.95rem}
+.btn{border:none;border-radius:999px;padding:10px 18px;font-family:var(--f-display);font-weight:700;font-size:1.05rem;background:var(--honey);color:var(--on-honey)}
+.btn.ghost{background:transparent;border:2px solid var(--line);color:var(--ink)}
+.btn.small{padding:7px 14px;font-size:.95rem}
+.btn:disabled{opacity:.4;cursor:default}
+
+/* Hive */
+.hivecard{background:var(--card);border-radius:var(--r);padding:14px 14px 16px;border:1.5px solid var(--line)}
+.hivehead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:10px}
+.hivehead h2{font-size:1.25rem}
+.hivehead .count{font-family:var(--f-display);font-weight:700;color:var(--honey-deep);font-variant-numeric:tabular-nums}
+#hive{display:flex;flex-direction:column;align-items:center}
+.hrow{display:flex;gap:4px}
+.hrow + .hrow{margin-top:calc(var(--cell) * -0.25 + 4px)}
+.hrow.off{transform:translateX(calc((var(--cell) + 4px)/2))}
+.hex{width:var(--cell);height:calc(var(--cell)*1.1547);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);border:none;padding:0;background:var(--wax);transition:transform .15s}
+.hex:hover{transform:scale(1.08)}
+.hex.working{background:#F7C873}
+.hex.gold{background:var(--honey)}
+.hex.empty{visibility:hidden}
+.hex{display:grid;place-items:center}
+.hex.focus::after{content:"";width:26%;height:23%;border-radius:50%;background:var(--ink);opacity:.6}
+.focusnote{background:var(--wax);border-radius:var(--r);padding:10px 14px;font-size:.92rem;margin:0}
+.star{border:1.5px solid var(--line);background:var(--paper);border-radius:999px;padding:4px 12px;font-size:.85rem;font-weight:700}
+.star[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .hex.working{background:#7A5A22}}
+:root[data-theme="dark"] .hex.working{background:#7A5A22}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:center;margin-top:12px;font-size:.8rem;color:var(--ink-soft)}
+.legend i{display:inline-block;width:11px;height:12px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);vertical-align:-1px;margin-right:4px}
+.hivenote{font-size:.8rem;color:var(--ink-soft);text-align:center;margin:8px 0 0}
+
+/* Game screens */
+.gamebar{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.progress{display:flex;gap:4px;flex:1;max-width:260px}
+.progress i{flex:1;height:8px;border-radius:4px;background:var(--wax)}
+.progress i.ok{background:var(--good)}
+.progress i.no{background:var(--miss)}
+.progress i.now{background:var(--honey)}
+.stage{background:var(--card);border-radius:var(--r);border:1.5px solid var(--line);padding:18px 16px;display:flex;flex-direction:column;gap:14px;align-items:stretch}
+.stage .label{font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);font-weight:700;text-align:center}
+.mic{align-self:center;width:112px;height:128px;border:none;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:var(--honey);color:var(--on-honey);display:grid;place-items:center;transition:transform .12s}
+.mic:active{transform:scale(.94)}
+.mic svg{width:44px;height:44px}
+.asks{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ask{border:1.5px solid var(--line);background:var(--paper);border-radius:10px;padding:8px 4px;font-size:.85rem;font-weight:700}
+.info{background:var(--paper);border-radius:10px;padding:10px 12px;font-size:1rem;min-height:2.6em}
+.info:empty{display:none}
+.info small{display:block;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);font-weight:700}
+.answer{display:flex;gap:8px}
+.answer input{flex:1;min-width:0;font-family:var(--f-body);font-weight:700;font-size:1.5rem;letter-spacing:.06em;padding:10px 12px;border:2px solid var(--line);border-radius:12px;background:var(--paper);color:var(--ink)}
+.answer input:focus{border-color:var(--honey);outline:none}
+.peekrow{display:flex;justify-content:center}
+.peek{background:none;border:none;color:var(--ink-soft);font-size:.85rem;text-decoration:underline;text-underline-offset:3px}
+.peekbox{text-align:center;font-family:var(--f-display);font-weight:700;font-size:1.5rem;background:var(--wax);border-radius:10px;padding:6px}
+.feedback{border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;align-items:center;text-align:center}
+.feedback.good{background:var(--good-soft)}
+.feedback.bad{background:var(--miss-soft)}
+.feedback h3{font-size:1.4rem}
+.feedback.good h3{color:var(--good)}
+.feedback.bad h3{color:var(--miss)}
+.letters{display:flex;flex-wrap:wrap;justify-content:center;gap:3px}
+.letters span{font-family:var(--f-body);font-weight:700;font-size:1.25rem;min-width:1.35em;padding:2px 3px;border-radius:5px;background:var(--card);text-align:center}
+.letters span.x{background:var(--miss);color:#fff}
+.letters span.g{color:var(--good)}
+.letters.yours span{font-size:1rem;background:transparent;text-decoration:none}
+.letters.yours span.x{background:transparent;color:var(--miss);text-decoration:line-through}
+.feedback p{margin:0;font-size:.92rem}
+.plus{font-family:var(--f-display);font-weight:800;color:var(--honey-deep);font-size:1.2rem}
+@keyframes pop{0%{transform:scale(.7);opacity:.2}60%{transform:scale(1.06)}100%{transform:scale(1);opacity:1}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pop{animation:pop .35s ease-out}
+.shake{animation:shake .3s ease-in-out 2}
+
+/* Gap game */
+.slots{display:flex;justify-content:center;gap:3px;flex-wrap:nowrap}
+.slot{width:var(--slot);height:calc(var(--slot)*1.25);display:grid;place-items:center;font-family:var(--f-body);font-weight:700;font-size:calc(var(--slot)*.68);border-radius:6px;background:var(--paper);border:none;padding:0}
+.slot.blank{background:var(--wax);border:2px dashed var(--honey-deep)}
+.slot.blank.filled{border-style:solid;background:var(--card)}
+.slot.blank.next{box-shadow:0 0 0 3px var(--honey)}
+.slot.right{background:var(--good-soft);border-color:var(--good);color:var(--good)}
+.slot.wrong{background:var(--miss-soft);border-color:var(--miss);color:var(--miss)}
+.tiles{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.tile{width:48px;height:54px;border:none;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:var(--honey);color:var(--on-honey);font-family:var(--f-body);font-weight:700;font-size:1.4rem}
+.tile:disabled{opacity:.25}
+.clue{text-align:center;font-size:1rem;margin:0}
+.clue em{color:var(--ink-soft)}
+
+/* Cards */
+.flash{background:var(--card);border:1.5px solid var(--line);border-radius:var(--r);padding:22px 18px;min-height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;cursor:pointer}
+.flash .w{font-family:var(--f-body);font-weight:700;font-size:clamp(1.8rem,8vw,2.6rem);word-break:break-word;line-height:1.1}
+.flash .pos{font-style:italic;color:var(--ink-soft)}
+.flash .def{font-size:1.15rem;max-width:34ch}
+.flash .def b,.info b,.clue b{color:var(--honey-deep)}
+.plain{display:block;background:var(--good-soft);border-radius:10px;padding:8px 12px;font-size:.95rem;max-width:36ch;margin-top:6px}
+.plain small{display:block;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--good);font-weight:700}
+.flash .sent{color:var(--ink-soft);max-width:36ch}
+.flash .tip{background:var(--wax);border-radius:10px;padding:8px 12px;font-size:.92rem;max-width:36ch}
+.flash .tip b{font-family:var(--f-display)}
+.flash .tap{font-size:.8rem;color:var(--ink-soft);letter-spacing:.08em;text-transform:uppercase}
+.cardnav{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.cardnav .idx{font-family:var(--f-display);font-weight:700;font-variant-numeric:tabular-nums}
+.status{display:inline-flex;gap:6px;align-items:center;font-size:.8rem;font-weight:700;border-radius:999px;padding:3px 10px;background:var(--wax)}
+.status.gold{background:var(--honey);color:var(--on-honey)}
+.status.working{background:var(--miss-soft);color:var(--miss)}
+
+/* Results */
+.results{background:var(--card);border:1.5px solid var(--line);border-radius:var(--r);padding:20px 16px;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center}
+.results .big{font-family:var(--f-display);font-weight:800;font-size:3.2rem;line-height:1;color:var(--honey-deep);font-variant-numeric:tabular-nums}
+.reslist{list-style:none;padding:0;margin:0;width:100%;display:flex;flex-direction:column;gap:4px}
+.reslist li{display:flex;justify-content:space-between;padding:6px 10px;border-radius:8px;background:var(--paper);font-weight:700}
+.reslist li.no{background:var(--miss-soft)}
+.reslist li span:last-child{font-weight:400;color:var(--ink-soft);font-size:.9rem}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.fineprint{font-size:.78rem;color:var(--ink-soft);text-align:center;margin:0}
+
+/* Two players */
+.howto{margin:0;font-size:.98rem;max-width:60ch}
+.pcard{background:var(--card);border:1.5px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.pcard label{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-soft)}
+.pcard input{font-family:var(--f-display);font-weight:700;font-size:1.35rem;border:none;border-bottom:2px dashed var(--line);background:transparent;color:var(--ink);padding:0;min-width:0}
+.pcard input:focus{outline:none;border-bottom-color:var(--honey)}
+.pnote{font-size:.85rem;color:var(--ink-soft);margin:0}
+.seg.sm button{font-size:.92rem;padding:6px 4px}
+.seg.two{grid-template-columns:1fr 1fr}
+.linkbtn{background:none;border:none;color:var(--ink-soft);text-decoration:underline;text-underline-offset:3px;font-size:.85rem;padding:0}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.gcard{background:var(--card);border:2px solid var(--line);border-radius:var(--r);padding:10px 8px;text-align:center;display:flex;flex-direction:column;gap:2px;min-width:0;transition:border-color .2s,box-shadow .2s}
+.gcard.active{border-color:var(--honey);box-shadow:0 0 0 2px var(--honey)}
+.gcard.winner{border-color:var(--good);box-shadow:0 0 0 2px var(--good)}
+.gname{font-family:var(--f-display);font-weight:700;font-size:1.15rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gmeta{font-weight:700;font-size:.9rem}
+.gcard.out .gmeta{color:var(--miss)}
+.gstat{font-size:.8rem;color:var(--ink-soft)}
+.gal{width:100%;max-width:118px;height:auto;display:block;margin:2px auto}
+.gal *{fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-width:4}
+.gal .pt{stroke:var(--ink)}
+.gal .wood{stroke:var(--honey-deep)}
+.gal .ghost{stroke:var(--line);stroke-width:2.5;stroke-dasharray:2 6}
+.gal .new{stroke:var(--miss)}
+.gal .anim{animation:pop .45s ease-out;transform-box:fill-box;transform-origin:center}
+.gal .eyes{stroke:var(--miss);stroke-width:2.5}
+.handoff{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;padding-block:8px}
+.handoff h3{font-size:1.7rem}
+.handoff p{margin:0;color:var(--ink-soft);max-width:34ch}
+[hidden]{display:none!important}
+.sndlist{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:4px;font-size:.95rem}
+.sndlist b{font-weight:700}
+#sndAdvice p{margin:0 0 8px}
+.seg.three{grid-template-columns:repeat(3,1fr)}
+.seg.three button{font-size:.92rem;padding:8px 2px}
+.timerow{display:flex;align-items:center;gap:8px}
+.timerow span{flex:1;font-size:.9rem;color:var(--ink-soft);font-weight:700}
+.timerow .btn{width:40px;padding:6px 0;font-size:1.2rem;line-height:1}
+.tval{font-family:var(--f-display);font-size:1.3rem;min-width:3.2ch;text-align:center;font-variant-numeric:tabular-nums}
+#clockRound,#relayRound,#duelRound{font-family:var(--f-display);font-weight:700}
+.clockface{font-family:var(--f-display);font-weight:800;font-size:2.3rem;line-height:1.15;font-variant-numeric:tabular-nums}
+.gcard.active .clockface{color:var(--honey-deep)}
+.clockface.low,.gcard.active .clockface.low{color:var(--miss)}
+.bank{height:8px;background:var(--wax);border-radius:4px;overflow:hidden;margin:2px 8px 4px}
+.bank i{display:block;height:100%;background:var(--honey)}
+.cstate{font-size:.8rem;font-weight:700;color:var(--ink-soft);min-height:1.2em}
+.gcard.out .cstate{color:var(--miss)}
+.bonus{font-family:var(--f-display);font-weight:800;color:var(--good);font-size:1.1rem;min-height:1.3em}
+.tdots{display:inline-flex;gap:4px;vertical-align:middle;margin-left:8px}
+.tdots i{width:10px;height:10px;border-radius:50%;background:var(--wax);display:block}
+.tdots i.ok{background:var(--good)}
+#clock .ask{padding:8px 10px}
+.relaywho{text-align:center;font-size:1.15rem}
+.relaywho b{font-family:var(--f-display);font-size:1.4rem;color:var(--honey-deep)}
+#relay .ask{padding:8px 10px}
+.kbd{display:flex;flex-direction:column;gap:6px}
+.krow{display:flex;gap:4px;justify-content:center}
+.key{flex:1;max-width:42px;min-width:0;height:46px;border:1.5px solid var(--line);background:var(--paper);border-radius:8px;font-family:var(--f-body);font-weight:700;font-size:1.2rem;padding:0}
+.key:active{background:var(--honey);color:var(--on-honey)}
+.key:disabled{opacity:.35}
+.playcol{display:flex;flex-direction:column;gap:14px}
+.missrow{display:flex;align-items:center;gap:10px;justify-content:center}
+.missrow .gal{width:64px;margin:0;flex:none}
+.mic.sm{width:84px;height:96px}
+.mic.sm svg{width:34px;height:34px}
+.bkcode{width:100%;font:.8rem/1.4 ui-monospace,Menlo,Consolas,monospace;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);padding:8px 10px;resize:vertical;word-break:break-all}
+.bkcode:focus{outline:none;border-color:var(--honey)}
+.hist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.hist li{display:flex;justify-content:space-between;gap:10px;background:var(--paper);border-radius:8px;padding:6px 10px;font-size:.9rem}
+.hist li b{font-family:var(--f-display)}
+.hist li span:last-child{color:var(--ink-soft);font-size:.8rem;white-space:nowrap}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 40 40" aria-hidden="true">
+        <ellipse cx="13" cy="13" rx="8" ry="6" fill="var(--wax)" stroke="var(--ink)" stroke-width="1.5" transform="rotate(-25 13 13)"/>
+        <ellipse cx="25" cy="11" rx="8" ry="6" fill="var(--wax)" stroke="var(--ink)" stroke-width="1.5" transform="rotate(20 25 11)"/>
+        <ellipse cx="20" cy="25" rx="11" ry="9" fill="var(--honey)" stroke="var(--ink)" stroke-width="1.5"/>
+        <path d="M16 17 q-2 8 0 16 M23 17 q2 8 0 16" stroke="var(--ink)" stroke-width="2.6" fill="none"/>
+        <circle cx="29" cy="23" r="1.4" fill="var(--ink)"/>
+      </svg>
+      <h1>Bee Ready</h1>
+    </div>
+    <div class="honeypot" title="Honey points">
+      <svg width="20" height="22" viewBox="0 0 20 22" aria-hidden="true"><polygon points="10,1 19,6 19,16 10,21 1,16 1,6" fill="var(--honey)" stroke="var(--honey-deep)" stroke-width="1.5"/></svg>
+      <span id="honey">0</span>
+      <button class="iconbtn" id="mute" aria-label="Sound on">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path id="wave" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- HOME -->
+  <section id="home" class="wrap" style="gap:16px">
+    <div class="placard">
+      <div class="num" id="pnum">00</div>
+      <div class="who">
+        <label for="pname">Speller</label>
+        <input id="pname" maxlength="18" placeholder="Your name" autocomplete="off" autocorrect="off" spellcheck="false">
+      </div>
+    </div>
+
+    <div class="seg" id="homeSeg" role="group" aria-label="Word list">
+      <button data-list="5">5th</button>
+      <button data-list="6">6th</button>
+      <button data-list="both">Both</button>
+      <button data-list="focus">★ Focus</button>
+    </div>
+
+    <p class="listnote" id="listNote"></p>
+    <p class="focusnote" id="focusNote" hidden><b>Focus words</b> are the ones that need extra practice, from both grades. Add or remove a word with the ★ button on its word card.</p>
+
+    <div class="modes">
+      <button class="mode main" id="goBee">
+        <div class="hexicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></div>
+        <div><b>Spell it</b><span>Hear the word, type it. Just like the real bee.</span></div>
+        <div class="pts">+10</div>
+      </button>
+      <button class="mode" id="goGap">
+        <div class="hexicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 19h4M10 19h4M17 19h4"/><path d="M12 5v9M8 10l4 4 4-4"/></svg></div>
+        <div><b>Fill the gaps</b><span>Tap the missing letters into place.</span></div>
+        <div class="pts">+5</div>
+      </button>
+      <button class="mode" id="goCards">
+        <div class="hexicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="6" width="13" height="15" rx="2"/><path d="M8 3h10a2 2 0 0 1 2 2v12"/></svg></div>
+        <div><b>Word cards</b><span>Flip through words and what they mean.</span></div>
+      </button>
+      <button class="mode" id="goDuel">
+        <div class="hexicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="7" r="3"/><circle cx="16" cy="7" r="3"/><path d="M2 20c0-3.3 2.7-6 6-6M22 20c0-3.3-2.7-6-6-6M12 12v9"/></svg></div>
+        <div><b>Two players</b><span>Spell-off or Letter relay. Don't get hanged.</span></div>
+      </button>
+    </div>
+
+    <div class="tricky" id="noVoiceBox" hidden>
+      <p>Words can't be read aloud in this view. Open Bee Ready in your web browser to hear them.</p>
+      <button class="btn small" id="goSound2">Sound check</button>
+    </div>
+    <div class="tricky" id="trickyBox" hidden>
+      <p><b id="trickyN">0</b> tricky words to work on</p>
+      <button class="btn small" id="goTricky">Practice them</button>
+    </div>
+
+    <div class="hivecard">
+      <div class="hivehead"><h2>Your hive</h2><span class="count" id="hiveCount">0 / 50</span></div>
+      <div id="hive"></div>
+      <div class="legend">
+        <span><i style="background:var(--wax)"></i>Not tried</span>
+        <span><i class="lg-working" style="background:#F7C873"></i>Learning</span>
+        <span><i style="background:var(--honey)"></i>Mastered</span>
+        <span><b style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ink);opacity:.6;margin-right:4px;vertical-align:1px"></b>Focus word</span>
+      </div>
+      <p class="hivenote">A cell turns gold after you spell the word right twice in a row in Spell it. Tap any cell to study that word.</p>
+    </div>
+    <p class="fineprint"><button class="linkbtn" id="goSound">Can't hear anything? Run a sound check</button></p>
+    <p class="fineprint"><button class="linkbtn" id="goBackup">Back up or move progress</button></p>
+    <p class="fineprint">Words from the 2026–2027 Scripps School Spelling Bee Two Bee study lists. Each definition uses the dictionary's own key words (in bold), the ones he'll hear if he asks the pronouncer, with a kid-words version underneath.</p>
+  </section>
+
+  <!-- SPELL IT -->
+  <section id="bee" hidden>
+    <div class="wrap" style="gap:14px">
+      <div class="gamebar">
+        <button class="btn ghost small" data-quit>Quit</button>
+        <div class="progress" id="beeProg"></div>
+        <span class="honeypot" id="beeScore">0</span>
+      </div>
+      <div class="stage" id="beeStage">
+        <div class="label" id="beeLabel">Word 1 of 10</div>
+        <button class="mic" id="sayWord" aria-label="Hear the word">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>
+        </button>
+        <div class="asks">
+          <button class="ask" data-ask="def">Definition?</button>
+          <button class="ask" data-ask="sent">Sentence?</button>
+          <button class="ask" data-ask="pos">Part of speech?</button>
+        </div>
+        <div class="info" id="beeInfo"></div>
+        <div id="beeFeedback"></div>
+        <form class="answer" id="beeForm">
+          <input id="beeInput" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" placeholder="Type the word" aria-label="Your spelling">
+          <button class="btn" type="submit" id="beeSubmit">Check</button>
+        </form>
+        <button class="btn" id="beeNext" hidden>Next word</button>
+        <div class="peekrow"><button class="peek" id="peek">Grown-up peek: show me the word to read aloud</button></div>
+        <div class="peekbox" id="peekBox" hidden></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FILL THE GAPS -->
+  <section id="gap" hidden>
+    <div class="wrap" style="gap:14px">
+      <div class="gamebar">
+        <button class="btn ghost small" data-quit>Quit</button>
+        <div class="progress" id="gapProg"></div>
+        <span class="honeypot" id="gapScore">0</span>
+      </div>
+      <div class="stage">
+        <div class="label" id="gapLabel">Word 1 of 10</div>
+        <p class="clue" id="gapClue"></p>
+        <div class="slots" id="slots"></div>
+        <div class="tiles" id="tiles"></div>
+        <div id="gapFeedback"></div>
+        <div class="row">
+          <button class="btn ghost small" id="gapHear">Hear it</button>
+          <button class="btn ghost small" id="gapClear">Clear</button>
+          <button class="btn" id="gapNext" hidden>Next word</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CARDS -->
+  <section id="cards" hidden>
+    <div class="wrap" style="gap:14px">
+      <div class="gamebar">
+        <button class="btn ghost small" data-quit>Done</button>
+        <span class="cardnav"><span class="idx" id="cardIdx">1 / 50</span></span>
+        <button class="btn ghost small" id="cardShuffle">Shuffle</button>
+      </div>
+      <div class="flash" id="flash" role="button" tabindex="0" aria-label="Flip card"></div>
+      <div class="cardnav">
+        <button class="btn ghost" id="cardPrev">Back</button>
+        <button class="btn ghost" id="cardHear">Hear it</button>
+        <button class="btn" id="cardNext">Next</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOUND CHECK -->
+  <section id="sound" hidden>
+    <div class="wrap" style="gap:14px">
+      <div class="gamebar"><button class="btn ghost small" data-quit>Back</button><h2 style="font-size:1.35rem">Sound check</h2><span style="width:56px"></span></div>
+      <p class="howto">Turn the media volume up first, by pressing the volume button while something is playing. Then try both tests.</p>
+      <div class="row">
+        <button class="btn" id="testVoice">Test the voice</button>
+        <button class="btn ghost" id="testBeep">Test the beep</button>
+      </div>
+      <div class="info" id="sndResult"></div>
+      <div class="pcard">
+        <label>What this phone reports</label>
+        <ul class="sndlist" id="sndReport"></ul>
+      </div>
+      <div class="pcard" id="sndAdviceCard" hidden>
+        <label>What to try</label>
+        <div id="sndAdvice" class="howto"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BACKUP -->
+  <section id="backup" hidden>
+    <div class="wrap" style="gap:14px">
+      <div class="gamebar"><button class="btn ghost small" data-quit>Back</button><h2 style="font-size:1.35rem">Back up or move</h2><span style="width:56px"></span></div>
+      <p class="howto">Progress is saved on this device only. To move it to another device, or into the installed app, copy the backup code here and paste it there.</p>
+      <div class="pcard">
+        <label for="bkOut">Backup code for this device</label>
+        <p class="pnote" id="bkSummary"></p>
+        <textarea id="bkOut" class="bkcode" readonly rows="4" spellcheck="false"></textarea>
+        <div class="row" style="justify-content:flex-start">
+          <button class="btn small" id="bkCopy">Copy code</button>
+          <button class="btn ghost small" id="bkFile">Save as a file</button>
+        </div>
+        <p class="pnote" id="bkCopyNote"></p>
+      </div>
+      <div class="pcard">
+        <label for="bkIn">Restore from a backup</label>
+        <textarea id="bkIn" class="bkcode" rows="4" spellcheck="false" placeholder="Paste a backup code here"></textarea>
+        <div class="row" style="justify-content:flex-start">
+          <button class="btn small" id="bkCheck">Check code</button>
+          <button class="btn ghost small" id="bkPick">Open a backup file</button>
+          <input type="file" id="bkFileIn" accept=".txt,.json,text/plain,application/json" hidden>
+        </div>
+        <div class="info" id="bkResult"></div>
+        <button class="btn" id="bkApply" hidden>Replace this device's progress</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- TWO PLAYERS: SETUP -->
+  <section id="duelSetup" hidden>
+    <div class="wrap" style="gap:14px">
+      <div class="gamebar"><button class="btn ghost small" data-quit>Back</button><h2 style="font-size:1.35rem">Two players</h2><span style="width:56px"></span></div>
+      <div class="seg three" id="modeSeg" role="group" aria-label="Game"><button data-mode="spell">Spell-off</button><button data-mode="relay">Letter relay</button><button data-mode="clock">Beat the clock</button></div>
+      <p class="howto" id="howto"></p>
+      <div class="pcard">
+        <label for="p1name" id="p1label">Player 1 goes first</label>
+        <input id="p1name" maxlength="14" placeholder="Name" autocomplete="off" spellcheck="false">
+        <div class="seg sm" data-for="0" role="group" aria-label="Player 1 word list"><button data-list="5">5th</button><button data-list="6">6th</button><button data-list="both">Both</button><button data-list="focus">★ Focus</button></div>
+        <div class="timerow" data-t="0"><span>Starting time</span><button class="btn ghost small" data-step="-10" aria-label="Less time">−</button><b class="tval"></b><button class="btn ghost small" data-step="10" aria-label="More time">+</button></div>
+      </div>
+      <div class="pcard">
+        <label for="p2name">Player 2</label>
+        <input id="p2name" maxlength="14" placeholder="Name" autocomplete="off" spellcheck="false">
+        <p class="pnote" id="relayListNote" hidden>In Letter relay you share one word, so it comes from Player 1's list.</p>
+        <div class="seg sm" id="p2list" data-for="1" role="group" aria-label="Player 2 word list"><button data-list="5">5th</button><button data-list="6">6th</button><button data-list="both">Both</button><button data-list="focus">★ Focus</button></div>
+        <div class="timerow" data-t="1"><span>Starting time</span><button class="btn ghost small" data-step="-10" aria-label="Less time">−</button><b class="tval"></b><button class="btn ghost small" data-step="10" aria-label="More time">+</button></div>
+      </div>
+      <button class="linkbtn" id="swapPlayers" style="align-self:center">⇄ Swap Player 1 and Player 2</button>
+      <div class="pcard">
+        <label>Whose words count toward the hive?</label>
+        <div class="seg sm three" id="trackSeg" role="group" aria-label="Whose words count toward the hive"><button data-track="0">Player 1</button><button data-track="1">Player 2</button><button data-track="-1">Neither</button></div>
+        <p class="pnote">That player's correct words fill in the honeycomb, and their misses go to the tricky-words pile. Pick Neither when two guests are playing.</p>
+      </div>
+      <div class="pcard" id="maxCard">
+        <label>Misses before you're hanged</label>
+        <div class="seg sm two" id="maxSeg" role="group" aria-label="Misses allowed"><button data-max="6">6 · quick game</button><button data-max="10">10 · long game</button></div>
+        <p class="pnote">In the long game, the gallows gets built piece by piece too.</p>
+      </div>
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <span class="pnote" id="seriesLine"></span>
+        <button class="linkbtn" id="resetSeries">Reset series</button>
+      </div>
+      <div class="pcard" id="histCard" hidden>
+        <label>Recent games</label>
+        <ul class="hist" id="histList"></ul>
+      </div>
+      <button class="btn" id="startDuel">Start the showdown</button>
+    </div>
+  </section>
+
+  <!-- TWO PLAYERS: PLAY -->
+  <section id="duel" hidden>
+    <div class="wrap" style="gap:12px">
+      <div class="gamebar"><button class="btn ghost small" data-quit>Quit</button><span class="label" id="duelRound">Round 1</span><span style="width:56px"></span></div>
+      <div class="duo"><div class="gcard" id="g0"></div><div class="gcard" id="g1"></div></div>
+      <div class="stage">
+        <div class="handoff" id="handoff">
+          <h3 id="handName">Your turn</h3>
+          <p id="handNote"></p>
+          <button class="btn" id="readyBtn">I'm ready. Say my word</button>
+        </div>
+        <div id="duelPlay" class="playcol" hidden>
+          <div class="label" id="duelWho" style="text-align:center"></div>
+          <button class="mic sm" id="duelSay" aria-label="Hear the word again">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>
+          </button>
+          <div class="asks">
+            <button class="ask" data-ask="def">Definition?</button>
+            <button class="ask" data-ask="sent">Sentence?</button>
+            <button class="ask" data-ask="pos">Part of speech?</button>
+          </div>
+          <div class="info" id="duelInfo"></div>
+          <div id="duelFeedback"></div>
+          <form class="answer" id="duelForm">
+            <input id="duelInput" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" placeholder="Type the word" aria-label="Your spelling">
+            <button class="btn" type="submit">Check</button>
+          </form>
+          <button class="btn" id="duelNext" hidden>Next</button>
+          <div class="peekrow"><button class="peek" id="duelPeek">Other player: peek at the word to read it aloud</button></div>
+          <div class="peekbox" id="duelPeekBox" hidden></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TWO PLAYERS: LETTER RELAY -->
+  <section id="relay" hidden>
+    <div class="wrap" style="gap:12px">
+      <div class="gamebar"><button class="btn ghost small" data-quit>Quit</button><span class="label" id="relayRound">Word 1</span><span style="width:56px"></span></div>
+      <div class="duo"><div class="gcard" id="r0"></div><div class="gcard" id="r1"></div></div>
+      <div class="stage">
+        <div class="relaywho" id="relayWho"></div>
+        <div class="row" style="gap:6px">
+          <button class="btn small" id="relayHear">Hear it</button>
+          <button class="ask" data-ask="def">Definition?</button>
+          <button class="ask" data-ask="sent">Sentence?</button>
+        </div>
+        <div class="info" id="relayInfo"></div>
+        <div class="slots" id="rslots"></div>
+        <div id="relayFeedback"></div>
+        <div class="kbd" id="kbd"></div>
+        <button class="btn" id="relayNext" hidden>Next word</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- TWO PLAYERS: BEAT THE CLOCK -->
+  <section id="clock" hidden>
+    <div class="wrap" style="gap:12px">
+      <div class="gamebar"><button class="btn ghost small" data-quit>Quit</button><span id="clockRound">Round 1</span><button class="btn ghost small" id="cPause" hidden>Pause</button></div>
+      <div class="duo"><div class="gcard" id="c0"></div><div class="gcard" id="c1"></div></div>
+      <div class="stage">
+        <div class="handoff" id="chand">
+          <h3 id="cHandName">Your turn</h3>
+          <p id="cHandNote"></p>
+          <button class="btn" id="cReady">I'm ready. Start my clock</button>
+        </div>
+        <div class="handoff" id="cpaused" hidden>
+          <h3>Paused</h3>
+          <p>The clock is stopped. Tap Resume to hear the word again and keep going.</p>
+          <button class="btn" id="cResume">Resume</button>
+        </div>
+        <div class="playcol" id="cplay" hidden>
+          <div class="relaywho" id="cWho"></div>
+          <div class="row" style="gap:6px" id="cAsks">
+            <button class="btn small" id="cSay">Hear it</button>
+            <button class="ask" data-ask="def">Definition?</button>
+            <button class="ask" data-ask="sent">Sentence?</button>
+          </div>
+          <div class="info" id="cInfo"></div>
+          <div id="cFeedback"></div>
+          <form class="answer" id="cForm">
+            <input id="cInput" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" placeholder="Type the word" aria-label="Your spelling">
+            <button class="btn" type="submit">Check</button>
+          </form>
+          <button class="btn" id="cNext" hidden>Next</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TWO PLAYERS: END -->
+  <section id="duelEnd" hidden>
+    <div class="results">
+      <h2 id="duelEndTitle">Game over</h2>
+      <p id="duelEndLine" style="margin:0"></p>
+      <div class="duo" style="width:100%"><div class="gcard" id="ge0"></div><div class="gcard" id="ge1"></div></div>
+      <p class="pnote" id="duelMissed" hidden></p>
+      <p class="pnote" id="duelSeries"></p>
+      <div class="row">
+        <button class="btn" id="rematch">Rematch</button>
+        <button class="btn ghost" id="reviewBtn" hidden></button>
+        <button class="btn ghost" id="changePlayers">Change settings</button>
+        <button class="btn ghost" data-quit>Back to the hive</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="results" hidden>
+    <div class="results">
+      <h2 id="resTitle">Round complete</h2>
+      <div class="big" id="resScore">+0</div>
+      <p id="resLine" style="margin:0"></p>
+      <ul class="reslist" id="resList"></ul>
+      <div class="row">
+        <button class="btn" id="again">Play again</button>
+        <button class="btn ghost" data-quit>Back to the hive</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+// [word, part of speech, kid definition, sentence, tip]
+const W5 = [
+["Halloween","noun","The holiday on October 31 when people wear costumes and go trick-or-treating.","For Halloween, I'm dressing up as an astronaut.","Starts with a capital H. Double l, double e."],
+["compliment","verb","To say something nice about someone.","I want to compliment the chef on this amazing soup.","compl-I-ment: I like to give compliments. (Complement with an e means something that completes.)"],
+["compromise","verb","To settle a disagreement by each side giving up a little.","My sister and I compromise by taking turns picking the movie.",""],
+["incident","noun","Something that happens, especially something unusual.","There was a funny incident with a squirrel at recess.",""],
+["Japanese","adjective","From or about the country of Japan.","We ate Japanese noodles for dinner.","Capital J, because it comes from the name of a country."],
+["investment","noun","Time or effort (not money!) that you commit to something for a long time, like a big project.","Practicing piano every day is an investment in getting better.",""],
+["bifocals","plural noun","Glasses with two parts in each lens: one for seeing close up and one for far away.","Grandpa wears bifocals so he can read and drive.","bi means two, like a bicycle's two wheels."],
+["cutlery","noun","Knives, forks, and spoons.","Please set the cutlery next to each plate.",""],
+["chisel","noun","A metal tool with a sharp edge for carving wood or stone.","The sculptor tapped the chisel with a hammer.","Ends in -el, not -le."],
+["fundraiser","noun","An event that collects money for a good cause.","Our school's bake sale fundraiser bought new library books.","Two words stuck together: fund + raiser."],
+["geologist","noun","A scientist who studies rocks and the history of the Earth.","The geologist found a fossil inside the rock.","geo means Earth."],
+["bellowed","verb","Shouted or roared in a loud, deep voice.","The coach bellowed across the field.",""],
+["organism","noun","Any living thing.","An amoeba is an organism made of just one cell.",""],
+["quail","noun","A small, plump bird that lives on the ground.","A quail scurried out of the tall grass.",""],
+["atmosphere","noun","The layer of air that surrounds the Earth.","Rockets have to blast through the atmosphere to reach space.","The f sound is spelled ph."],
+["disappointment","noun","The sad feeling when something doesn't turn out the way you hoped.","Rain on game day was a big disappointment.","dis + appoint + ment: one s, two p's."],
+["truant","adjective","Missing school without permission.","The truant student was spotted at the arcade.",""],
+["pamphlet","noun","A small, thin booklet with information in it.","The museum gave us a pamphlet about dinosaurs.","The f sound is spelled ph."],
+["helium","noun","A very light gas that makes balloons float.","The helium balloon floated up to the ceiling.",""],
+["suggested","verb","Offered an idea.","Mom suggested we go to the park after lunch.","Double g."],
+["chimpanzees","plural noun","Smart apes from Africa that are close relatives of humans.","The chimpanzees used sticks to fish for termites.",""],
+["desperate","adjective","Needing something very, very badly.","After the long hike, we were desperate for water.","des-PER-ate: there's a per in the middle."],
+["annoyance","noun","Something that bothers or irritates you.","The buzzing fly was a constant annoyance.","Double n, and it ends in -ance."],
+["interruption","noun","Something that stops you in the middle of what you're doing.","Sorry for the interruption, but dinner is ready.","Double r."],
+["concentrate","verb","To focus all your attention on something.","It's hard to concentrate when the TV is on.",""],
+["piñata","noun","A decorated container full of candy that you break open with a stick at parties.","Everyone cheered when the piñata finally broke open.","Spanish word. The ñ (with a squiggle) sounds like ny. Typing a plain n is OK here."],
+["territory","noun","An area of land that belongs to or is controlled by someone.","The wolf pack guards its territory.","Double r."],
+["stragglers","plural noun","People who fall behind the rest of the group.","The teacher waited for the stragglers at the back of the line.","Double g."],
+["albino","noun","An animal or person born without the usual color in their skin, hair, or eyes.","The zoo has an albino alligator that is completely white.",""],
+["ridiculous","adjective","So silly that it's funny or hard to believe.","The clown wore ridiculous shoes that were three feet long.","Starts with ri-, not re-. Think of ridicule."],
+["monorail","noun","A train that runs on a single rail.","We rode the monorail across the theme park.","mono means one."],
+["exploratory","adjective","Done to explore or find out about something new.","The scientists sent an exploratory robot into the cave.",""],
+["indigo","noun","A deep blue-purple color.","The night sky turned indigo after sunset.",""],
+["bratwurst","noun","A kind of German sausage.","Dad grilled bratwurst at the cookout.","German word: wurst means sausage."],
+["alphabetical","adjective","In order from A to Z.","Put the books in alphabetical order by author.",""],
+["integrity","noun","Being honest and doing the right thing, even when no one is watching.","She showed integrity when she returned the lost wallet.",""],
+["Oregon","noun","A state in the northwestern United States.","Oregon has huge forests and a rocky coast.","Capital O, because it's the name of a state."],
+["rebuttal","noun","An answer that argues against what someone else said.","In the debate, Jamal gave a strong rebuttal.","Double t."],
+["prejudice","noun","An unfair opinion about people, formed without good reason.","Judging someone by how they look is a kind of prejudice.","pre means before: judging before you know."],
+["solidarity","noun","When a group sticks together and supports each other.","The whole class wore blue in solidarity with their sick friend.",""],
+["calico","noun","An animal, especially a cat, with patches of different colors.","Our calico cat has orange, black, and white patches.",""],
+["sputnik","noun","A satellite that circles Earth or another body in space. Sputnik 1 was the very first one, launched in 1957.","In 1957, a tiny sputnik beeped as it circled the Earth.","A Russian word."],
+["cartridge","noun","A case that holds something and snaps into a machine, like a video game cartridge.","He blew on the old game cartridge to make it work.","Ends in -dge."],
+["segregation","noun","Keeping groups of people apart because of their race or background.","Ruby Bridges helped end segregation in New Orleans schools.",""],
+["tortillas","plural noun","Thin, round flatbreads made from corn or flour.","We filled warm tortillas with beans and cheese.","Spanish word. The ll sounds like y."],
+["civilian","noun","A person who is not in the military.","After the war, the soldier went back to being a civilian.",""],
+["fertilizer","noun","Something added to soil to help plants grow.","We spread fertilizer on the garden in spring.","The British spelling fertiliser also counts."],
+["apprentice","noun","Someone learning a trade by working with an expert.","The apprentice learned to build furniture from a master carpenter.","Double p."],
+["synthetic","adjective","Made by people instead of found in nature.","My raincoat is made of synthetic fabric.","The i sound at the start is spelled with a y."],
+["Caesar","noun","A powerful ruler. The word comes from Julius Caesar, a famous leader of ancient Rome.","Julius Caesar was a famous leader of ancient Rome.","Capital C. The tricky part is ae in the middle."]
+];
+const W6 = [
+["sorceress","noun","A woman who uses black magic; a kind of witch.","The sorceress turned the prince into a frog.",""],
+["glamorous","adjective","Fancy, exciting, and full of charm.","The movie star wore a glamorous gown.","Glamour has a u, but glamorous drops it."],
+["salamanders","plural noun","Small, slimy amphibians that look like lizards and live in damp places.","We found three salamanders under a wet log.",""],
+["suspension","noun","Being kept out of something, like school or a team, for a while as a punishment.","Breaking the rules led to a one-game suspension.",""],
+["singularity","noun","Something strange and one-of-a-kind about the way a person acts.","His singularity was wearing a bow tie to every soccer game.",""],
+["fictitious","adjective","Made up; not real.","The story takes place in a fictitious town on the moon.","Think of fiction. The ending -itious has two i's."],
+["convertible","noun","A car with a roof that folds down.","We drove to the beach in a convertible with the top down.","Ends in -ible."],
+["snarkiness","noun","A sarcastic, sassy way of talking.","Mom didn't appreciate the snarkiness in my voice.","snarky changes y to i: snarkiness."],
+["battalion","noun","A large group of soldiers that work together.","The battalion marched across the bridge.","Double t, single l."],
+["collateral","adjective","Happening on the side, not on purpose; indirect.","The flood caused collateral damage to the bridge downstream.","Double l at the start, single l at the end."],
+["initiation","noun","A ceremony for welcoming someone into a group.","The new scouts had an initiation around the campfire.",""],
+["mascara","noun","Makeup for darkening eyelashes.","The actor put on mascara before the play.",""],
+["perimeter","noun","The distance all the way around the edge of a shape.","The perimeter of a square with 3-inch sides is 12 inches.","peri means around, meter means measure."],
+["precedent","noun","Something that happened before and is used as an example for later.","Letting one student skip homework would set a precedent for everyone.","pre-CEDE: it goes before."],
+["materialize","verb","To appear or come into existence.","A rainbow seemed to materialize out of nowhere.","The British spelling materialise also counts."],
+["magnesium","noun","A light, silver-white metal that burns with a super-bright flame.","Magnesium is used in fireworks to make bright white sparks.",""],
+["meticulous","adjective","Very careful about every small detail.","She was meticulous about lining up her colored pencils.",""],
+["haddock","noun","An ocean fish related to cod, often eaten for dinner.","We had haddock and chips for lunch.","Double d."],
+["hypothermia","noun","When your body gets dangerously cold.","Wet clothes in freezing weather can cause hypothermia.","hypo means under, thermia means heat."],
+["optometrist","noun","An eye doctor who checks your vision and prescribes glasses.","The optometrist had me read letters off a chart.","opto means eye, metr means measure."],
+["megahertz","noun","A unit for measuring frequency: one million cycles every second.","My favorite radio station is at 101.1 megahertz.","Hertz is named after a scientist, Heinrich Hertz."],
+["cosmodrome","noun","A place where the Soviet Union (and now Russia) launches rockets into space.","Rockets still blast off from the Baikonur Cosmodrome.","cosmos (space) + drome (a racecourse or field)."],
+["arthritis","noun","A disease that makes joints swollen and painful.","Grandma's arthritis makes her knees ache when it rains.","-itis means swelling."],
+["schnauzer","noun","A dog breed with bushy eyebrows and a beard.","Our neighbor's schnauzer looks like a tiny old man with a mustache.","German word that starts with sch."],
+["insurrection","noun","A rebellion against a government or leader.","The colonists' insurrection grew into a full revolution.","Double r."],
+["regolith","noun","The loose dust, dirt, and broken rock that covers solid rock, like on the Moon.","Astronauts left footprints in the regolith on the Moon.","lith means stone."],
+["pentathlete","noun","An athlete who competes in five different events.","The pentathlete had to be good at five different sports.","penta means five. No extra a: athlete, not athalete."],
+["persnickety","adjective","Very fussy about small things.","My persnickety cat will only drink from a running faucet.",""],
+["fascism","noun","A kind of government where one dictator has total control, people aren't allowed to disagree, and the nation is put above everyone's rights.","Many countries fought against fascism in World War II.","The sh sound is spelled sc."],
+["pheasants","plural noun","Large birds with long tails and brightly colored feathers.","Two pheasants strutted across the farm field.","The f sound is spelled ph."],
+["predecessor","noun","The person who had a job or role before someone else.","The new principal said her predecessor did a great job.","Double s near the end."],
+["Senegal","noun","A country in West Africa on the Atlantic Ocean.","Dakar is the capital of Senegal.","Capital S, because it's the name of a country."],
+["reservoir","noun","A large place where water is collected and stored.","The reservoir upstate holds water for millions of people.","French word. It ends in -voir."],
+["duende","noun","A magical, magnetic charm that pulls people in, especially in music or dance.","The flamenco dancer performed with so much duende that the crowd was spellbound.","Spanish word, said DWEN-day."],
+["conscious","adjective","Awake and aware of what's happening around you.","The patient was conscious and talking after surgery.","con + SCI + ous."],
+["Polaroid","noun","A material that blocks glare, used in sunglasses. It's also a brand of instant camera.","Polaroid sunglasses cut the glare off the lake.","Capital P, because it's a brand name."],
+["carrion","noun","The rotting meat of a dead animal.","Vultures circled overhead, looking for carrion.","Not carry-on luggage! Double r, -ion."],
+["matrilineal","adjective","Tracing your family line through mothers.","In a matrilineal family, children belong to their mother's clan.","matri means mother, lineal means line."],
+["piteously","adverb","In a sad way that makes others feel sorry for you.","The puppy whimpered piteously at the door.","pity changes y to e: pit-e-ous."],
+["arnica","noun","A plant whose flowers are used in creams for bruises and sore muscles.","Mom rubbed arnica cream on my bruised knee.",""],
+["elliptical","adjective","Shaped like an oval, a stretched-out circle.","The Earth travels around the Sun in an elliptical orbit.","Double l."],
+["glaucoma","noun","An eye disease caused by too much pressure inside the eye, which can hurt vision.","The eye doctor tested Grandpa for glaucoma.",""],
+["iridium","noun","A very hard, heavy, silver-white metal.","Iridium is one of the rarest metals in the Earth's crust.","Named after Iris, the rainbow, for its colorful salts."],
+["adrenaline","noun","A chemical your body makes when you're scared or excited. It makes your heart race.","My adrenaline kicked in at the top of the roller coaster.",""],
+["cemetery","noun","A place where people are buried.","Old trees shaded the quiet cemetery.","Three e's: c-E-m-E-t-E-ry. No a anywhere."],
+["staccato","adjective","Played in short, separate, bouncy notes.","The trumpet played a staccato tune: bap, bap, bap!","Italian word. Double c, but only one t in the middle: stac-ca-to."],
+["rendezvous","noun","A planned meeting at a set time and place.","Our rendezvous point is the big oak tree at noon.","French word, said RON-day-voo. The z and the s are silent."],
+["romerillo","noun","A South American plant whose flowers make a yellow dye.","Weavers used romerillo to dye the wool yellow.","Spanish word. The ll sounds like y."],
+["dachshund","noun","A small dog with a long body and very short legs, sometimes called a wiener dog.","The dachshund waddled down the sidewalk.","German: dachs (badger) + hund (dog)."],
+["Aeolus","noun","The Greek god of the winds.","In the myth, Aeolus kept the winds tied up in a leather bag.","Capital A. Starts with Ae."]
+];
+// Dictionary-style definitions built around the key words a pronouncer will read. *Starred* words are shown in bold.
+const DICT = {
+"Halloween":"The *evening of October 31*, observed by displaying *jack-o'-lanterns*, *dressing up in disguise*, and *trick-or-treating*.",
+"compliment":"To show *esteem*, *respect*, *affection*, or *admiration* for someone with a *formal expression*, such as *speech*, a *gesture*, or a *ceremony*.",
+"compromise":"To *come to a settlement* or *agreement* by *mutual concession*.",
+"incident":"An *uncommon happening*.",
+"Japanese":"*Characteristic of* a *country in eastern Asia* made up of *islands in the western Pacific*.",
+"investment":"The *commitment of something other than money* to a *long-term interest or project*.",
+"bifocals":"*Eyeglasses* whose *lenses* have *one part* that *corrects for near vision* and *one for distant vision*.",
+"cutlery":"*Tools* used to *cut*, *serve*, and *eat* food.",
+"chisel":"A *tool* made of a *metal bar* with a *sharpened edge* at one end, used for *chipping or carving* the surface of materials.",
+"fundraiser":"An *event or campaign* *organized* to *collect or gather money*.",
+"geologist":"A *specialist* in the *history of Earth* and its life, especially as *recorded in rocks*.",
+"bellowed":"Made a *loud*, *deep*, *hollow*, *prolonged* sound.",
+"organism":"A *living being*.",
+"quail":"A *migratory game bird* of *Europe, Asia, and Africa*, about *seven inches long*.",
+"atmosphere":"The *whole mass of air* *surrounding the earth*.",
+"disappointment":"*Failing to come up to expectations*, or the condition of being *defeated in expectation or hope*.",
+"truant":"*Absent from school without permission*.",
+"pamphlet":"An *unbound publication* with a *small number of pages*.",
+"helium":"A *very light*, *colorless*, *inert gas* used for *diluting oxygen*, *inflating balloons*, and in *chemical and metallurgical* processes.",
+"suggested":"*Put an idea or proposition* *into the mind*.",
+"chimpanzees":"*Anthropoid apes* of *equatorial Africa* that are *smaller* and *more arboreal than the gorillas*.",
+"desperate":"*Arising from* or showing *extreme need* or *pressure of circumstance*.",
+"annoyance":"A *source of irritation*.",
+"interruption":"An act of *preventing* someone *from proceeding* by an *intrusive* or *interpolated* *comment or action*.",
+"concentrate":"To *bring or direct toward a common center* or *objective*; *to focus*.",
+"piñata":"A *decorated vessel*, often *papier-mâché*, *filled with candies, fruits, and gifts*, hung up to be *broken with sticks* by *blindfolded* people at *Latin-American festivities*.",
+"territory":"A *geographical region* that *belongs to* or is *controlled by a political authority*.",
+"stragglers":"Ones that *depart from the company* they belong to, or *from the direct or proper course*.",
+"albino":"Any *organism* showing *deficient pigmentation*.",
+"ridiculous":"*Unworthy of serious consideration*; *absurd*, *comical*, *preposterous*.",
+"monorail":"A *single track* for *railway cars* that *sit over it* or *hang suspended* from it.",
+"exploratory":"*Intended for* making a *first or preliminary study* of something.",
+"indigo":"A *dark grayish blue* color.",
+"bratwurst":"*Fresh pork sausage* for *frying or grilling*.",
+"alphabetical":"*Proceeding according to the order of the letters* of a language.",
+"integrity":"*Strict adherence to a code of moral values*; *incorruptibility*.",
+"Oregon":"A *state* in the *northwestern* part of the *U.S.*",
+"rebuttal":"*The act of contradicting*.",
+"prejudice":"An *irrational attitude* of *animosity or hostility* against a *person*, a *group of people*, a *race*, or their *supposed characteristics*.",
+"solidarity":"An *entire union of interests and responsibilities* in a *group*.",
+"calico":"A *blotched or spotted animal*.",
+"sputnik":"A *man-made object* meant to *orbit Earth, the Moon*, or another *celestial body*, usually *instrumented* to send back *space data*.",
+"cartridge":"A *case* for *holding integrated circuits* that contain a *computer program*.",
+"segregation":"The *separation* of a group of people by *race, class, or ethnic group*, restricting *where they live*, *who they interact with*, and *which schools they can attend*.",
+"tortillas":"*Round thin cakes* of *unleavened cornmeal bread*, usually *eaten hot* with a *topping or filling* such as *ground meat*, *cheese*, or *sauces*.",
+"civilian":"A *resident* of a country who is *not on active duty* in the *armed forces*.",
+"fertilizer":"A *substance* used to *enrich soil*.",
+"apprentice":"A person *in training* to *learn a trade* from a *skilled worker*.",
+"synthetic":"*Produced by artificial processes*; *man-made*.",
+"Caesar":"A *powerful ruler*; a *dictator*.",
+"sorceress":"A *woman* who *practices black magic*.",
+"glamorous":"Having a *bewitching*, *intangible*, *irresistibly magnetic charm*.",
+"salamanders":"Small *amphibians* that *resemble lizards*, have *soft moist skin*, *live in moist dark places*, and *feed on* small animals like *aquatic worms and insects*.",
+"suspension":"A *temporary forced withdrawal* from the exercise of *office, powers, or privileges*.",
+"singularity":"An *unusual manifestation* or *eccentricity* in *manner or behavior*.",
+"fictitious":"Relating to or being an *intentional fabrication*.",
+"convertible":"An *automobile* with a *top* that can be *folded back, lowered, or removed*.",
+"snarkiness":"A *sarcastic*, *impertinent*, or *irreverent* *manner or tone*.",
+"battalion":"A *considerable body of troops* *organized to act together*; an *army*.",
+"collateral":"*Not resulting directly* from an *action or cause*; *indirect*.",
+"initiation":"The *rites or ceremonies* by which someone is *made a member* of a *sect or society*, or given a particular *function or status*.",
+"mascara":"A *cosmetic* for *covering the eyelashes and eyebrows*.",
+"perimeter":"The *sum of the lengths* of the *line segments* that form a *polygon*.",
+"precedent":"Something *done or said* that may *serve as an example or rule* to *authorize or justify* a *later act* of the same kind.",
+"materialize":"*To come into actual existence*.",
+"magnesium":"A *silver-white*, *malleable* *metallic element* that occurs *abundantly in nature*.",
+"meticulous":"*Commendably thorough or precise*; *strict*.",
+"haddock":"An *important food fish*, usually *smaller than the common cod*, with a *black lateral line* and a *dark spot* just *behind the gills*.",
+"hypothermia":"*Subnormal temperature of the body*.",
+"optometrist":"A *specialist* who *examines the eye* for *defects* and *faults of refraction* and *prescribes corrective lenses and exercises*, but *not drugs or surgery*.",
+"megahertz":"A *unit of frequency* equal to *one million cycles per second*.",
+"cosmodrome":"A *Soviet aerospace center*, especially a *Soviet spacecraft launching installation*.",
+"arthritis":"*Inflammation* of *one or more joints* from *infectious, metabolic, or constitutional causes*.",
+"schnauzer":"A dog of a *breed of terriers* with a *long head*, *small ears*, *heavy eyebrows*, a *mustache and beard*, and a *wiry coat*.",
+"insurrection":"An act of *revolting against civil or political authority* or an *established government*.",
+"regolith":"*Unconsolidated residual or transported material* that *overlies* or covers the *solid rock in place*.",
+"pentathlete":"Someone *participating in an athletic contest* in which each contestant competes in *five different events*.",
+"persnickety":"*Excessively meticulous*; *fussy*.",
+"fascism":"A program for setting up a *centralized autocratic national regime* that is *severely nationalistic*, uses *rigid censorship*, and *forcibly suppresses opposition*.",
+"pheasants":"*Large*, often *long-tailed*, *brilliantly colored birds* of mostly *terrestrial habits*.",
+"predecessor":"*One who comes before in order of time*, especially a person who *previously occupied a position or office* that another person *succeeded* to.",
+"Senegal":"A *country in western Africa* on the *Atlantic*; a *republic of the French Community*, *formerly a territory of French West Africa*.",
+"reservoir":"A *place where water is collected* and *kept in quantity* for use *when wanted*.",
+"duende":"*The power to attract* through *personal magnetism and charm*.",
+"conscious":"*Mentally active*; *fully possessed of one's mental faculties*; *awake*.",
+"Polaroid":"A *light-polarizing material* used in *eyeglasses and lamps* to *prevent glare*, and in various *optical devices*.",
+"carrion":"The *decaying flesh* of a *dead animal*.",
+"matrilineal":"Relating to or *tracing descent through the maternal line*.",
+"piteously":"*In a manner deserving mercy or compassion*.",
+"arnica":"The *dried flower head* of an *herb* of the *northern hemisphere*, used for *bruises, sprains, and swellings*.",
+"elliptical":"*Shaped like an elongated circle*.",
+"glaucoma":"An *eye disease* marked by *increased pressure within the eyeball* that *damages the optic disk* and causes *gradual loss of vision*.",
+"iridium":"A *heavy silver-white metallic element* used in *hardening platinum* for alloys used in *surgical instruments and jewelry*.",
+"adrenaline":"A *blood-pressure-raising hormone* from the *glands next to the kidneys*, used as a *heart stimulant*.",
+"cemetery":"A *graveyard*; a *burial ground*.",
+"staccato":"Marked by *short, clear-cut playing or singing* of *tones or chords*.",
+"rendezvous":"A *meeting at an appointed place and time*.",
+"romerillo":"A *South American herb* whose *flower heads yield a yellow dye*.",
+"dachshund":"A *small dog* of *German origin* with *long drooping ears*, usually a *short sleek coat*, and *legs short* compared to its *body length*.",
+"Aeolus":"The *Greek god of the winds*."
+};
+const ALT = {materialize:["materialise"], fertilizer:["fertiliser"], "piñata":["pinata"], pentathlete:["pentathletes"]};
+// How the voice should say words it tends to mangle
+const SAY = {duende:"dwen-day", romerillo:"roh-meh-ree-yoh", Aeolus:"ee-oh-lus", dachshund:"dahks-hoond", "piñata":"pin-yah-tah", rendezvous:"ron-day-voo", regolith:"reg-oh-lith", Caesar:"Seezer", cosmodrome:"cosmo-drome"};
+
+const WORDS = [...W5.map(x=>mk(x,'5')), ...W6.map(x=>mk(x,'6'))];
+function mk(a,g){return {word:a[0],pos:a[1],def:a[2],dict:DICT[a[0]]||a[2],sent:a[3],tip:a[4],grade:g,id:a[0].toLowerCase()}}
+function fmt(t){return esc(t).replace(/\*(.+?)\*/g,"<b>$1</b>")}
+function plainText(t){return t.replace(/\*/g,"")}
+
+// Words highlighted on the paper lists for extra practice
+const FOCUS_START=["disappointment","desperate","concentrate","stragglers","civilian","japanese","geologist","exploratory","alphabetical","rebuttal","segregation","pamphlet","integrity","prejudice","sputnik","caesar",
+"convertible","insurrection","persnickety","predecessor","iridium","staccato","dachshund","glamorous","initiation","precedent","meticulous","arthritis","fascism","senegal","conscious","matrilineal","adrenaline","rendezvous","aeolus","fictitious","battalion","materialize","megahertz","schnauzer","pheasants","reservoir","piteously","glaucoma","cemetery"];
+const KEY="beeready.v1";
+const $=s=>document.querySelector(s);
+const $$=s=>[...document.querySelectorAll(s)];
+let S=load();
+function blankState(){return{name:"",num:0,list:"5",stats:{},honey:0,muted:false}}
+function load(){let d=blankState();try{const r=localStorage.getItem(KEY);if(r)Object.assign(d,JSON.parse(r))}catch(e){}if(!d.num)d.num=Math.floor(Math.random()*240)+10;if(!Array.isArray(d.focus))d.focus=[...FOCUS_START];return d}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+// Ask the browser not to clear saved progress when the device runs low on space
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persisted().then(p=>{if(!p)navigator.storage.persist()}).catch(()=>{})}catch(e){}
+
+const isFocus=w=>S.focus.includes(w.id);
+function listFor(k){if(k==="focus"){const f=WORDS.filter(isFocus);return f.length?f:WORDS}return k==="both"?WORDS:WORDS.filter(w=>w.grade===k)}
+function list(){return listFor(S.list)}
+const LISTNAME={"5":"5th grade list","6":"6th grade list",both:"Both lists",focus:"★ Focus words"};
+function st(w){return S.stats[w.id]||{r:0,w:0,s:0}}
+function status(w){const s=st(w);if(s.s>=2)return"gold";if(s.r||s.w)return"working";return"new"}
+function tricky(w){const s=st(w);return s.w>0&&s.s<2}
+function record(w,ok,countsTowardMastery){const s={...st(w)};if(ok){s.r++;if(countsTowardMastery)s.s++}else{s.w++;s.s=0}S.stats[w.id]=s;save()}
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function esc(t){return t.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+/* ---------- sound + voice ---------- */
+let AC=null;
+function tones(freqs,dur,gap,type){if(S.muted)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume();const t0=AC.currentTime;freqs.forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain(),t=t0+i*gap;o.type=type||"sine";o.frequency.value=f;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.16,t+0.015);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g).connect(AC.destination);o.start(t);o.stop(t+dur+0.05)})}catch(e){}}
+const chime=()=>tones([659,880,1319],0.25,0.08);
+const bell=()=>tones([1760,2637],1.1,0.0,"triangle");
+let voice=null;
+// Prefer voices stored on the phone: online voices fail silently on a weak connection
+function pickVoice(){try{const v=speechSynthesis.getVoices().filter(x=>/^en/i.test(x.lang)),us=v.filter(x=>/en[-_]US/i.test(x.lang));
+  voice=us.find(x=>x.localService&&/Samantha|Aria|Jenny|Allison|United States/i.test(x.name))||us.find(x=>x.localService)||v.find(x=>x.localService)||us[0]||v[0]||null}catch(e){}}
+try{pickVoice();speechSynthesis.onvoiceschanged=()=>{pickVoice();checkVoiceBanner()}}catch(e){}
+let curUtt=null;
+function speak(text,done){try{const ss=window.speechSynthesis;
+  if(!ss||typeof SpeechSynthesisUtterance==="undefined"){if(done)done();return false}
+  if(!voice)pickVoice();
+  const u=new SpeechSynthesisUtterance(text);u.rate=0.82;u.lang=voice?voice.lang:"en-US";if(voice)u.voice=voice;
+  if(done){u.onend=done;u.onerror=done}
+  curUtt=u; // keep a reference, or Chrome can drop the speech partway
+  ss.resume();
+  // Speaking immediately after cancel() is swallowed on some Android phones, so wait a beat
+  if(ss.speaking||ss.pending){ss.cancel();setTimeout(()=>ss.speak(u),90)}else ss.speak(u);
+  return true}catch(e){return false}}
+// Phones only allow audio after a tap. Unlock speech and beeps on the very first touch.
+let audioUnlocked=false;
+function unlockAudio(){if(audioUnlocked)return;audioUnlocked=true;
+  try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume()}catch(e){}
+  try{if(window.speechSynthesis&&typeof SpeechSynthesisUtterance!=="undefined"){const u=new SpeechSynthesisUtterance(" ");u.volume=0;speechSynthesis.speak(u)}}catch(e){}}
+["pointerdown","touchend","keydown"].forEach(ev=>document.addEventListener(ev,unlockAudio,{capture:true,passive:true}));
+function sayForm(w){return SAY[w.word]||w.word}
+function spokenSentence(w){return SAY[w.word]?w.sent.replace(new RegExp(w.word,"gi"),SAY[w.word]):w.sent}
+function blanked(w){let s=w.sent;[w.word,...(ALT[w.word]||[])].forEach(f=>{s=s.replace(new RegExp(f.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"gi"),"______")});return s}
+
+/* ---------- home ---------- */
+function show(id){["home","bee","gap","cards","results","duelSetup","duel","relay","clock","duelEnd","sound","backup"].forEach(x=>$("#"+x).hidden=x!==id);window.scrollTo(0,0);if(id==="home")renderHome()}
+function renderHome(){
+  $("#pnum").textContent=S.num;$("#pname").value=S.name||"";
+  $("#honey").textContent=S.honey;
+  $$("#homeSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.list===S.list));
+  $("#focusNote").hidden=S.list!=="focus";
+  const L=list(),gold=L.filter(w=>status(w)==="gold").length;
+  $("#hiveCount").textContent=gold+" / "+L.length;
+  $("#listNote").innerHTML=`Studying: <b>${LISTNAME[S.list]}</b>, ${L.length} words`;
+  const t=L.filter(tricky);$("#trickyBox").hidden=!t.length;$("#trickyN").textContent=t.length;
+  buildHive();
+}
+function buildHive(){
+  const box=$("#hive"),L=list();const w=(box.clientWidth||320);
+  const per=L.length>50?10:9;const cell=Math.max(22,Math.min(40,Math.floor((w-((w/per)/2))/per)-4));
+  box.style.setProperty("--cell",cell+"px");box.innerHTML="";
+  for(let i=0,r=0;i<L.length;i+=per,r++){
+    const row=document.createElement("div");row.className="hrow"+(r%2?" off":"");
+    L.slice(i,i+per).forEach((wd,k)=>{const b=document.createElement("button");b.className="hex "+status(wd)+(isFocus(wd)&&S.list!=="focus"?" focus":"");b.title=wd.word;b.setAttribute("aria-label",wd.word+(isFocus(wd)?", focus word":"")+", "+({gold:"mastered",working:"learning",new:"not tried"})[status(wd)]);b.onclick=()=>openCards(i+k);row.appendChild(b)});
+    box.appendChild(row);
+  }
+}
+$("#pname").addEventListener("input",e=>{S.name=e.target.value;save()});
+$$("#homeSeg button").forEach(b=>b.onclick=()=>{S.list=b.dataset.list;save();renderHome()});
+$("#mute").onclick=()=>{S.muted=!S.muted;save();setMute()};
+function setMute(){$("#wave").style.display=S.muted?"none":"";$("#mute").setAttribute("aria-label",S.muted?"Sound off":"Sound on")}
+$$("[data-quit]").forEach(b=>b.onclick=()=>{try{speechSynthesis.cancel()}catch(e){}show("home")});
+window.addEventListener("resize",()=>{if(!$("#home").hidden)buildHive();if(!$("#gap").hidden)sizeSlots()});
+
+function pickRound(pool,n){
+  const pri=w=>(tricky(w)?0:status(w)==="new"?1:status(w)==="working"?1.5:3)-(isFocus(w)?0.6:0);
+  return shuffle(shuffle(pool).map(w=>({w,k:pri(w)+Math.random()*1.2})).sort((a,b)=>a.k-b.k).slice(0,Math.min(n,pool.length)).map(x=>x.w));
+}
+let R=null;
+function progBar(el){el.innerHTML=R.words.map((_,i)=>`<i class="${i<R.res.length?(R.res[i].ok?"ok":"no"):i===R.i?"now":""}"></i>`).join("")}
+
+/* ---------- spell it ---------- */
+function startBee(pool){R={mode:"bee",tag:pool?"Practice round":LISTNAME[S.list],words:pickRound(pool||list(),10),i:0,score:0,res:[],phase:"ask"};show("bee");renderBee()}
+function cur(){return R.words[R.i]}
+function renderBee(){
+  const w=cur();R.phase="ask";
+  $("#beeLabel").textContent=`Word ${R.i+1} of ${R.words.length} · ${R.tag}`;
+  $("#beeScore").textContent="+"+R.score;progBar($("#beeProg"));
+  $("#beeInfo").innerHTML="";$("#beeFeedback").innerHTML="";$("#peekBox").hidden=true;
+  $("#beeForm").hidden=false;$("#beeNext").hidden=true;
+  const inp=$("#beeInput");inp.value="";inp.placeholder="Type the word";inp.disabled=false;
+  setTimeout(()=>speak(sayForm(w)),250);
+}
+$("#sayWord").onclick=()=>{if(!speak(sayForm(cur())))showNoVoice()};
+function showNoVoice(){$("#beeInfo").innerHTML="<small>No voice on this device</small>Ask a grown-up to tap the peek link below and read the word out loud."}
+function askInto(w,a,box){
+  if(a==="def"){box.innerHTML="<small>Definition</small>"+fmt(w.dict)+`<span class="plain"><small>In kid words</small>${esc(w.def)}</span>`;speak(plainText(w.dict))}
+  if(a==="sent"){box.innerHTML="<small>Sentence</small>"+esc(blanked(w));speak(spokenSentence(w))}
+  if(a==="pos"){box.innerHTML="<small>Part of speech</small>"+esc(w.pos);speak(w.pos)}
+}
+$$("#bee .ask").forEach(b=>b.onclick=()=>askInto(cur(),b.dataset.ask,$("#beeInfo")));
+$("#peek").onclick=()=>{const w=cur(),p=$("#peekBox");p.textContent=w.word+(SAY[w.word]?"  ("+SAY[w.word]+")":"");p.hidden=false;clearTimeout(p._t);p._t=setTimeout(()=>p.hidden=true,2500)};
+function norm(s){return s.normalize("NFC").trim().toLowerCase()}
+function matches(guess,w){const g=norm(guess);return[w.word,...(ALT[w.word]||[])].some(f=>norm(f)===g)}
+function letters(word,cls){return `<div class="letters ${cls||""}">`+[...word].map(c=>`<span>${esc(c)}</span>`).join("")+"</div>"}
+function diff(target,guess){
+  const a=[...target],b=[...guess],A=a.map(c=>c.toLowerCase()),B=b.map(c=>c.toLowerCase()),n=a.length,m=b.length;
+  const d=Array.from({length:n+1},()=>new Array(m+1).fill(0));
+  for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)d[i][j]=A[i]===B[j]?d[i+1][j+1]+1:Math.max(d[i+1][j],d[i][j+1]);
+  const okA=new Array(n).fill(false),okB=new Array(m).fill(false);let i=0,j=0;
+  while(i<n&&j<m){if(A[i]===B[j]){okA[i]=okB[j]=true;i++;j++}else if(d[i+1][j]>=d[i][j+1])i++;else j++}
+  return{t:`<div class="letters">`+a.map((c,k)=>`<span class="${okA[k]?"":"x"}">${esc(c)}</span>`).join("")+"</div>",
+         g:`<div class="letters yours">`+b.map((c,k)=>`<span class="${okB[k]?"":"x"}">${esc(c)}</span>`).join("")+"</div>"};
+}
+$("#beeForm").addEventListener("submit",e=>{
+  e.preventDefault();const w=cur(),inp=$("#beeInput"),val=inp.value;if(!val.trim())return;
+  if(R.phase==="ask"){
+    if(matches(val,w)){
+      record(w,true,true);R.score+=10;R.res.push({w,ok:true});chime();
+      let note="";
+      if(norm(val)==="pinata")note="In the real bee, remember the ñ.";
+      else if(ALT[w.word]&&ALT[w.word].includes(norm(val))&&w.word!=="pentathlete")note="That's the British spelling. It counts!";
+      else if(w.word[0]!==w.word[0].toLowerCase()&&val.trim()[0]!==w.word[0])note="Remember it starts with a capital "+w.word[0]+".";
+      $("#beeFeedback").innerHTML=`<div class="feedback good pop"><h3>Correct!</h3>${letters(w.word)}<span class="plus">+10 honey</span>${note?`<p>${esc(note)}</p>`:""}</div>`;
+      endWord();
+    }else{
+      record(w,false);R.res.push({w,ok:false,guess:val.trim()});bell();
+      const dd=diff(w.word,val.trim());
+      $("#beeFeedback").innerHTML=`<div class="feedback bad shake"><h3>Not quite</h3><p>You spelled:</p>${dd.g}<p>The word is:</p>${dd.t}${w.tip?`<p><b>Tip:</b> ${esc(w.tip)}</p>`:""}</div>`;
+      R.phase="fix";inp.value="";inp.placeholder="Now type it right";inp.focus();
+      progBar($("#beeProg"));
+    }
+  }else if(R.phase==="fix"){
+    if(matches(val,w)){chime();$("#beeFeedback").insertAdjacentHTML("beforeend",`<div class="feedback good pop"><h3>Got it now!</h3></div>`);endWord()}
+    else{inp.classList.remove("shake");void inp.offsetWidth;inp.classList.add("shake")}
+  }
+});
+function endWord(){R.phase="done";$("#beeForm").hidden=true;$("#beeScore").textContent="+"+R.score;progBar($("#beeProg"));const n=$("#beeNext");n.hidden=false;n.textContent=R.i<R.words.length-1?"Next word":"See my score";n.focus()}
+$("#beeNext").onclick=()=>{R.i++;if(R.i>=R.words.length)finish();else renderBee()};
+
+/* ---------- fill the gaps ---------- */
+const VOW="aeiouy";
+function startGap(){R={mode:"gap",words:pickRound(list(),10),i:0,score:0,res:[]};show("gap");renderGap()}
+function chooseBlanks(word){
+  const a=[...word.toLowerCase()],n=a.length,k=n<=6?2:n<=10?3:4;let cand=[];
+  for(let i=1;i<n;i++){if(VOW.includes(a[i])||a[i]===a[i-1]||a[i]===a[i+1]||"ñcs".includes(a[i]))cand.push(i)}
+  cand=shuffle(cand);const pick=[];for(const c of cand){if(pick.length>=k)break;pick.push(c)}
+  if(pick.length<k)shuffle([...Array(n).keys()].slice(1)).forEach(i=>{if(pick.length<k&&!pick.includes(i))pick.push(i)});
+  return pick.sort((x,y)=>x-y);
+}
+function renderGap(){
+  const w=cur();R.blanks=chooseBlanks(w.word);R.fill=R.blanks.map(()=>null);R.locked=false;
+  const missing=R.blanks.map(i=>[...w.word.toLowerCase()][i]);
+  const pool="aeioucklsrtnmy";const extra=[];while(extra.length<3){const c=pool[Math.floor(Math.random()*pool.length)];extra.push(c)}
+  R.tiles=shuffle([...missing,...extra]).map(c=>({c,used:false}));
+  $("#gapLabel").textContent=`Word ${R.i+1} of ${R.words.length} · ${LISTNAME[S.list]}`;
+  $("#gapScore").textContent="+"+R.score;progBar($("#gapProg"));
+  $("#gapClue").innerHTML=`<em>${esc(w.pos)}:</em> ${fmt(w.dict)}`;
+  $("#gapFeedback").innerHTML="";$("#gapNext").hidden=true;$("#gapClear").hidden=false;
+  drawGap();sizeSlots();setTimeout(()=>speak(sayForm(w)),250);
+}
+function sizeSlots(){const w=cur();if(!w)return;const el=$("#slots");const avail=(el.parentElement.clientWidth||320)-32;el.style.setProperty("--slot",Math.max(18,Math.min(42,Math.floor(avail/[...w.word].length)-3))+"px")}
+function drawGap(){
+  const w=cur(),a=[...w.word];const nextBlank=R.fill.indexOf(null);
+  $("#slots").innerHTML=a.map((c,i)=>{const b=R.blanks.indexOf(i);
+    if(b<0)return `<span class="slot">${esc(c)}</span>`;
+    const f=R.fill[b];const cls=["slot","blank",f!=null?"filled":"",b===nextBlank&&!R.locked?"next":"",R.mark?R.mark[b]:""].join(" ");
+    return `<button class="${cls}" data-b="${b}" aria-label="blank ${b+1}">${f!=null?esc(R.tiles[f].c):""}</button>`}).join("");
+  $("#tiles").innerHTML=R.tiles.map((t,i)=>`<button class="tile" data-t="${i}" ${t.used||R.locked?"disabled":""}>${esc(t.c)}</button>`).join("");
+  $$("#slots [data-b]").forEach(el=>el.onclick=()=>{if(R.locked)return;const b=+el.dataset.b;if(R.fill[b]!=null){R.tiles[R.fill[b]].used=false;R.fill[b]=null;drawGap()}});
+  $$("#tiles [data-t]").forEach(el=>el.onclick=()=>{const t=+el.dataset.t,b=R.fill.indexOf(null);if(b<0||R.locked)return;R.fill[b]=t;R.tiles[t].used=true;drawGap();if(R.fill.indexOf(null)<0)checkGap()});
+}
+function checkGap(){
+  const w=cur(),a=[...w.word.toLowerCase()];R.locked=true;
+  R.mark=R.blanks.map((i,b)=>R.tiles[R.fill[b]].c===a[i]?"right":"wrong");
+  const ok=R.mark.every(m=>m==="right");
+  if(ok){R.score+=5;record(w,true,false);R.res.push({w,ok:true});chime();$("#gapFeedback").innerHTML=`<div class="feedback good pop"><h3>You filled it!</h3><span class="plus">+5 honey</span></div>`}
+  else{record(w,false);R.res.push({w,ok:false});bell();$("#gapFeedback").innerHTML=`<div class="feedback bad shake"><h3>Almost</h3><p>The word is:</p>${letters(w.word)}${w.tip?`<p><b>Tip:</b> ${esc(w.tip)}</p>`:""}</div>`}
+  drawGap();R.mark=null;$("#gapClear").hidden=true;
+  $("#gapScore").textContent="+"+R.score;progBar($("#gapProg"));
+  const n=$("#gapNext");n.hidden=false;n.textContent=R.i<R.words.length-1?"Next word":"See my score";
+}
+$("#gapClear").onclick=()=>{if(R.locked)return;R.fill=R.fill.map(()=>null);R.tiles.forEach(t=>t.used=false);drawGap()};
+$("#gapHear").onclick=()=>speak(sayForm(cur()));
+$("#gapNext").onclick=()=>{R.i++;if(R.i>=R.words.length)finish();else renderGap()};
+
+/* ---------- results ---------- */
+function finish(){
+  S.honey+=R.score;save();
+  const right=R.res.filter(r=>r.ok).length,n=R.res.length;
+  $("#resTitle").textContent=right===n?"Perfect round!":right>=n*0.7?"Great spelling!":"Nice work, keep going!";
+  $("#resScore").textContent="+"+R.score;
+  $("#resLine").textContent=`${right} of ${n} right on the first try${S.name?", "+S.name:""}.`;
+  $("#resList").innerHTML=R.res.map(r=>`<li class="${r.ok?"":"no"}"><span>${esc(r.w.word)}</span><span>${r.ok?"first try":r.guess?"you wrote "+esc(r.guess):"missed"}</span></li>`).join("");
+  R.lastMode=R.mode;show("results");
+}
+$("#again").onclick=()=>R&&R.lastMode==="gap"?startGap():startBee();
+
+/* ---------- cards ---------- */
+let C={deck:[],i:0,flip:false};
+function openCards(i){C={deck:list(),i:i||0,flip:false};show("cards");renderCard()}
+function renderCard(){
+  const w=C.deck[C.i],s=status(w);
+  $("#cardIdx").textContent=`${C.i+1} / ${C.deck.length}`;
+  const f=isFocus(w);
+  const badge=`<div class="row" style="gap:6px"><span class="status ${s}">${({gold:"Mastered",working:"Learning",new:"Not tried yet"})[s]}</span><button class="star" id="starBtn" aria-pressed="${f}">${f?"★ Focus word":"☆ Add to focus"}</button></div>`;
+  $("#flash").innerHTML=C.flip
+    ? `<div class="w" style="font-size:1.6rem">${esc(w.word)}</div><div class="pos">${esc(w.pos)}</div><div class="def">${fmt(w.dict)}</div><div class="plain"><small>In kid words</small>${esc(w.def)}</div><div class="sent">“${esc(w.sent)}”</div>${w.tip?`<div class="tip"><b>Spelling tip:</b> ${esc(w.tip)}</div>`:""}`
+    : `${badge}<div class="w">${esc(w.word)}</div><div class="pos">${esc(w.pos)}</div><div class="tap">Tap to see what it means</div>`;
+  $("#flash").classList.remove("pop");void $("#flash").offsetWidth;$("#flash").classList.add("pop");
+  const sb=$("#starBtn");if(sb)sb.onclick=e=>{e.stopPropagation();S.focus=isFocus(w)?S.focus.filter(x=>x!==w.id):[...S.focus,w.id];save();renderCard()};
+}
+function flip(){C.flip=!C.flip;renderCard();if(C.flip)speak(plainText(C.deck[C.i].dict))}
+$("#flash").onclick=flip;
+$("#flash").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();flip()}};
+$("#cardNext").onclick=()=>{C.i=(C.i+1)%C.deck.length;C.flip=false;renderCard()};
+$("#cardPrev").onclick=()=>{C.i=(C.i-1+C.deck.length)%C.deck.length;C.flip=false;renderCard()};
+$("#cardHear").onclick=()=>speak(sayForm(C.deck[C.i]));
+$("#cardShuffle").onclick=()=>{C.deck=shuffle(C.deck);C.i=0;C.flip=false;renderCard()};
+
+/* ---------- two players: hangman showdown ---------- */
+// Drawing order: base, pole, beam, rope, head, body, left arm, right arm, left leg, right leg
+const PARTS=['<line x1="8" y1="132" x2="72" y2="132"/>','<line x1="24" y1="132" x2="24" y2="8"/>','<line x1="22" y1="8" x2="88" y2="8"/>','<line x1="86" y1="8" x2="86" y2="26"/>',
+'<circle cx="86" cy="37" r="11"/>','<line x1="86" y1="48" x2="86" y2="86"/>','<line x1="86" y1="58" x2="70" y2="74"/>','<line x1="86" y1="58" x2="102" y2="74"/>','<line x1="86" y1="86" x2="72" y2="110"/>','<line x1="86" y1="86" x2="100" y2="110"/>'];
+function gallows(misses,max,red,anim){
+  const shown=Math.min(10,(max===6?4:0)+misses);
+  let s='<svg viewBox="0 0 110 140" class="gal" aria-hidden="true">';
+  PARTS.forEach((p,i)=>{
+    let c=i<shown?"pt"+(i<4?" wood":""):"ghost";
+    if(i<shown&&i===shown-1&&red)c+=" new"+(anim?" anim":"");
+    s+=p.replace(/^<(\w+)/,`<$1 class="${c}"`);
+  });
+  if(misses>=max)s+='<path class="eyes" d="M80 33l4 4M84 33l-4 4M88 33l4 4M92 33l-4 4"/>';
+  return s+"</svg>";
+}
+let D=null;
+function cfg(){S.duel=S.duel||{};const c=S.duel;
+  if(!Array.isArray(c.names))c.names=["Player 1","Player 2"];
+  if(!c.v2){c.v2=true;if(c.names[1]==="Dad")c.names[1]="Player 2"}
+  if(![0,1,-1].includes(c.track))c.track=0;
+  if(!Array.isArray(c.lists))c.lists=["5","6"];
+  if(c.max!==6&&c.max!==10)c.max=6;
+  if(!Array.isArray(c.wins))c.wins=[0,0];
+  if(!Array.isArray(c.times))c.times=[120,80];
+  if(typeof c.ties!=="number")c.ties=0;
+  if(!Array.isArray(c.hist))c.hist=[];
+  return c}
+const MODENAME={spell:"Spell-off",relay:"Letter relay",clock:"Beat the clock"};
+function paintHist(){const h=cfg().hist;$("#histCard").hidden=!h.length;
+  $("#histList").innerHTML=h.slice(0,8).map(g=>{const d=new Date(g.d),when=d.toLocaleDateString(undefined,{month:"short",day:"numeric"});
+    const who=i=>`${g.r===i?"🏆 ":""}${esc(g.n[i])} <b>${g.s[i]}</b>`;
+    return `<li><span>${who(0)} · ${who(1)}${g.r==="tie"?" · tie":""}</span><span>${esc(MODENAME[g.m]||"")} · ${esc(when)}</span></li>`}).join("")}
+function seriesText(){const c=cfg();return c.wins[0]+c.wins[1]+c.ties?`Series: ${c.names[0]} ${c.wins[0]}, ${c.names[1]} ${c.wins[1]}${c.ties?`, ties ${c.ties}`:""}`:"No games played yet."}
+const HOWTO={spell:"Take turns spelling the word the phone says. Every miss adds a piece to your hangman. The first one to get hanged loses. Both players always get the same number of turns.",
+  relay:"Build each word together, one letter at a time, taking turns. Pick a wrong letter and you take a hangman piece, and the right letter goes in. The first one to get hanged loses. Who starts switches every word.",
+  clock:"Each of you has your own clock, and it only runs on your turn. A turn is 3 words spelled right. The clock pauses while the phone says each word. A miss shows the right spelling for 2 seconds, and that time counts. Get all 3 right on the first try and you earn 5 seconds back. Run out and you're out, but the other player still gets a turn to match."};
+const fmtT=ms=>{ms=Math.max(0,ms);if(ms<10000)return(ms/1000).toFixed(1);const s=Math.ceil(ms/1000);return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
+function paintSetup(){const c=cfg();if(!["spell","relay","clock"].includes(c.mode))c.mode="spell";
+  $$(".timerow").forEach(r=>{r.hidden=c.mode!=="clock";r.querySelector(".tval").textContent=fmtT(c.times[+r.dataset.t]*1000)});
+  $("#maxCard").hidden=c.mode==="clock";
+  $$("#trackSeg button").forEach(b=>{const t=+b.dataset.track;b.setAttribute("aria-pressed",t===c.track);if(t>=0)b.textContent=c.names[t]});
+  $$("#modeSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===c.mode));
+  $("#howto").textContent=HOWTO[c.mode];
+  $("#p2list").hidden=c.mode==="relay";$("#relayListNote").hidden=c.mode!=="relay";
+  $("#p1label").textContent=c.mode==="relay"?"Player 1":"Player 1 goes first";
+  $$("#duelSetup [data-for]").forEach(g=>{const i=+g.dataset.for;g.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.list===c.lists[i]))});
+  $$("#maxSeg button").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.max===c.max));
+  $("#seriesLine").textContent=seriesText();paintHist()}
+function openDuel(){const c=cfg();show("duelSetup");$("#p1name").value=c.names[0];$("#p2name").value=c.names[1];paintSetup()}
+$$("#duelSetup [data-for] button").forEach(b=>b.onclick=()=>{cfg().lists[+b.parentElement.dataset.for]=b.dataset.list;save();paintSetup()});
+$$("#maxSeg button").forEach(b=>b.onclick=()=>{cfg().max=+b.dataset.max;save();paintSetup()});
+$$("#modeSeg button").forEach(b=>b.onclick=()=>{cfg().mode=b.dataset.mode;save();paintSetup()});
+$$("#trackSeg button").forEach(b=>b.onclick=()=>{cfg().track=+b.dataset.track;save();paintSetup()});
+$("#swapPlayers").onclick=()=>{const c=cfg();c.names.reverse();c.lists.reverse();c.times.reverse();c.wins.reverse();if(c.track>=0)c.track=1-c.track;save();
+  $("#p1name").value=c.names[0];$("#p2name").value=c.names[1];paintSetup()};
+$$(".timerow button").forEach(b=>b.onclick=()=>{const c=cfg(),i=+b.parentElement.dataset.t;c.times[i]=Math.max(30,Math.min(300,c.times[i]+ +b.dataset.step));save();paintSetup()});
+["#p1name","#p2name"].forEach((id,i)=>$(id).addEventListener("input",e=>{cfg().names[i]=e.target.value.trim()||(i?"Player 2":"Player 1");save();paintSetup()}));
+$("#resetSeries").onclick=()=>{const c=cfg();c.wins=[0,0];c.ties=0;c.hist=[];save();paintSetup()};
+
+function duelDeck(i){const pool=listFor(cfg().lists[i]);return i===cfg().track?pickRound(pool,pool.length):shuffle(pool)}
+function startDuel(){const c=cfg();
+  D={track:c.track,max:c.max,turn:0,round:1,fresh:null,last:null,p:[0,1].map(i=>({name:c.names[i],list:c.lists[i],misses:0,right:0,max:c.max,unit:"spelled right",deck:duelDeck(i)}))};
+  show("duel");handoff()}
+function duelWord(i){const p=D.p[i];if(!p.deck.length)p.deck=duelDeck(i);let w=p.deck.shift();
+  if(D.last&&w.id===D.last.id){if(!p.deck.length)p.deck=duelDeck(i);p.deck.push(w);w=p.deck.shift()}
+  return w}
+function gcard(p,red,anim){if(p.clock)return ccard(p,null);const left=p.max-p.misses;
+  return `<div class="gname">${esc(p.name)}</div>${p.list?`<div class="glist">${LISTNAME[p.list]}</div>`:""}${gallows(p.misses,p.max,red,anim)}<div class="gmeta">${left<=0?"Hanged!":left===1?"1 miss left":left+" misses left"}</div><div class="gstat">${p.right} ${p.right===1?p.unit.replace("letters","letter"):p.unit}</div>`}
+function drawCards(anim){[0,1].forEach(i=>{const el=$("#g"+i);el.innerHTML=gcard(D.p[i],D.fresh===i,anim&&D.fresh===i);el.classList.toggle("active",D.turn===i);el.classList.toggle("out",D.p[i].misses>=D.max)})}
+function handoff(note){const p=D.p[D.turn];
+  $("#handoff").hidden=false;$("#duelPlay").hidden=true;
+  $("#handName").textContent=`${p.name}'s turn`;
+  $("#handNote").textContent=note||`Pass the phone to ${p.name}.`;
+  $("#duelRound").textContent="Round "+D.round;drawCards();$("#readyBtn").focus()}
+$("#readyBtn").onclick=()=>{
+  D.w=duelWord(D.turn);D.last=D.w;D.phase="ask";D.fresh=null;drawCards();
+  $("#handoff").hidden=true;$("#duelPlay").hidden=false;
+  $("#duelWho").textContent=`${D.p[D.turn].name}'s word`;
+  $("#duelInfo").innerHTML="";$("#duelFeedback").innerHTML="";$("#duelPeekBox").hidden=true;
+  $("#duelForm").hidden=false;$("#duelNext").hidden=true;
+  const inp=$("#duelInput");inp.value="";inp.placeholder="Type the word";
+  speak(sayForm(D.w))};
+$("#duelSay").onclick=()=>speak(sayForm(D.w));
+$$("#duel .ask").forEach(b=>b.onclick=()=>askInto(D.w,b.dataset.ask,$("#duelInfo")));
+$("#duelPeek").onclick=()=>{const w=D.w,p=$("#duelPeekBox");p.textContent=w.word+(SAY[w.word]?"  ("+SAY[w.word]+")":"");p.hidden=false;clearTimeout(p._t);p._t=setTimeout(()=>p.hidden=true,2500)};
+$("#duelForm").addEventListener("submit",e=>{
+  e.preventDefault();const w=D.w,p=D.p[D.turn],own=D.turn===D.track,inp=$("#duelInput"),val=inp.value;if(!val.trim())return;
+  if(D.phase==="ask"){
+    if(matches(val,w)){
+      p.right++;if(own)record(w,true,true);chime();
+      $("#duelFeedback").innerHTML=`<div class="feedback good pop"><h3>Correct!</h3>${letters(w.word)}</div>`;duelTurnDone();
+    }else{
+      p.misses++;if(own)record(w,false);bell();D.fresh=D.turn;drawCards(true);
+      const dd=diff(w.word,val.trim()),out=p.misses>=D.max;
+      $("#duelFeedback").innerHTML=`<div class="feedback bad shake"><div class="missrow">${gallows(p.misses,D.max,true,true)}<h3>${out?"That's the last piece!":`Missed it. ${D.max-p.misses===1?"1 miss":(D.max-p.misses)+" misses"} left.`}</h3></div><p>You spelled:</p>${dd.g}<p>The word is:</p>${dd.t}${w.tip?`<p><b>Tip:</b> ${esc(w.tip)}</p>`:""}</div>`;
+      D.phase="fix";inp.value="";inp.placeholder="Now type it right";inp.focus();
+    }
+  }else if(D.phase==="fix"){
+    if(matches(val,w)){chime();$("#duelFeedback").insertAdjacentHTML("beforeend",`<div class="feedback good pop"><h3>Got it now!</h3></div>`);duelTurnDone()}
+    else{inp.classList.remove("shake");void inp.offsetWidth;inp.classList.add("shake")}
+  }
+});
+// Who has won, checked at the end of each turn. null means keep playing.
+function duelOutcome(){const h=D.p.map(p=>p.misses>=D.max);
+  if(D.turn===0)return h[0]&&D.max-D.p[1].misses>1?1:null; // P2 can't be caught, so P2 wins now
+  if(h[0]&&h[1])return"tie";if(h[0])return 1;if(h[1])return 0;return null}
+function duelTurnDone(){D.phase="done";$("#duelForm").hidden=true;
+  const n=$("#duelNext");n.textContent=duelOutcome()!==null?"See who won":`Pass to ${D.p[1-D.turn].name}`;n.hidden=false;n.focus()}
+$("#duelNext").onclick=()=>{const r=duelOutcome();if(r!==null)return endDuel(r);
+  const lastChance=D.turn===0&&D.p[0].misses>=D.max;
+  if(D.turn===1)D.round++;D.turn=1-D.turn;D.fresh=null;
+  handoff(lastChance?`${D.p[0].name} is out of misses. ${D.p[1].name}, spell this one right to win. Miss it and it's a tie.`:null)};
+function endDuel(r){endGame(D.p,r,`${D.p[0].name} spelled ${D.p[0].right} right. ${D.p[1].name} spelled ${D.p[1].right} right.`)}
+const isOut=p=>p.clock?p.bank<=0:p.misses>=p.max;
+function endGame(P,r,line){const c=cfg();if(r==="tie")c.ties++;else c.wins[r]++;
+  c.hist.unshift({d:Date.now(),m:c.mode,n:P.map(p=>p.name),s:P.map(p=>p.right),r});c.hist=c.hist.slice(0,20);save();
+  $("#duelEndTitle").textContent=r==="tie"?"It's a tie!":`${P[r].name} wins!`;
+  $("#duelEndLine").textContent=line;$("#duelMissed").hidden=true;$("#reviewBtn").hidden=true;
+  [0,1].forEach(i=>{const el=$("#ge"+i);el.innerHTML=gcard(P[i]);el.classList.toggle("winner",r===i);el.classList.toggle("out",isOut(P[i]))});
+  $("#duelSeries").textContent=seriesText();show("duelEnd");if(r!=="tie")setTimeout(chime,150)}
+const startPicked=()=>{const m=cfg().mode;m==="relay"?startRelay():m==="clock"?startClock():startDuel()};
+
+/* ---------- two players: beat the clock (chess clock) ---------- */
+const WPT=3;let K=null;
+function ccard(p,i){const id=k=>i==null?"":` id="${k}${i}"`;
+  return `<div class="gname">${esc(p.name)}</div><div class="glist">${LISTNAME[p.list]}</div><div class="clockface${p.bank<=5000?" low":""}"${id("ct")}>${fmtT(p.bank)}</div><div class="bank"><i${id("cb")} style="width:${Math.max(0,p.bank/p.start*100)}%"></i></div><div class="cstate"${id("cs")}>${p.bank<=0?"Out of time":""}</div><div class="gstat">${p.right} spelled right</div><div class="bonus"${id("cbon")}></div>`}
+function startClock(){const c=cfg();if(K)clearInterval(K.iv);
+  K={track:c.track,turn:0,round:1,phase:"hand",paused:false,speakUntil:0,tok:0,last:performance.now(),lastBeep:null,
+     p:[0,1].map(i=>({name:c.names[i],list:c.lists[i],start:c.times[i]*1000,bank:c.times[i]*1000,right:0,deck:duelDeck(i),missed:[],clock:true}))};
+  K.iv=setInterval(clockTick,100);show("clock");clockHandoff()}
+function clockCards(){[0,1].forEach(i=>{const el=$("#c"+i);el.innerHTML=ccard(K.p[i],i);el.classList.toggle("active",K.turn===i&&K.phase!=="over");el.classList.toggle("out",K.p[i].bank<=0)});paintClocks()}
+function paintClocks(){const now=performance.now();K.p.forEach((p,i)=>{const t=$("#ct"+i);if(!t)return;
+  t.textContent=fmtT(p.bank);t.classList.toggle("low",p.bank<=5000);$("#cb"+i).style.width=Math.max(0,p.bank/p.start*100)+"%";
+  $("#cs"+i).textContent=p.bank<=0?"Out of time":K.turn!==i?"Waiting":K.phase==="hand"?"Up next":K.phase!=="play"?"Stopped":K.paused?"Paused":K.speakUntil>now?"Listening…":"Running"})}
+function clockTick(){if(!K)return;if($("#clock").hidden){clearInterval(K.iv);return}
+  const now=performance.now(),dt=now-K.last;K.last=now;
+  if(K.phase==="play"&&!K.paused&&now>=K.speakUntil){const p=K.p[K.turn];p.bank-=dt;
+    const s=Math.ceil(p.bank/1000);if(p.bank>0&&p.bank<=5000&&s!==K.lastBeep){K.lastBeep=s;tones([1250],0.05,0)}
+    if(p.bank<=0){p.bank=0;bell();clockEndTurn(true)}}
+  paintClocks()}
+function clockHandoff(note){K.phase="hand";const p=K.p[K.turn];
+  $("#chand").hidden=false;$("#cplay").hidden=true;$("#cpaused").hidden=true;$("#cPause").hidden=true;
+  $("#cHandName").textContent=`${p.name}'s turn`;
+  $("#cHandNote").textContent=note||`Pass the phone to ${p.name}. Your clock starts once the first word has been said.`;
+  $("#clockRound").textContent="Round "+K.round;clockCards();$("#cReady").focus()}
+$("#cReady").onclick=()=>{K.phase="play";K.done=0;K.turnMiss=0;K.lastBeep=null;
+  $("#chand").hidden=true;$("#cplay").hidden=false;$("#cPause").hidden=false;$("#cAsks").hidden=false;$("#cFeedback").innerHTML="";$("#cNext").hidden=true;$("#cForm").hidden=false;
+  clockCards();clockWord()};
+function clockWord(){const p=K.p[K.turn];if(!p.deck.length)p.deck=duelDeck(K.turn);K.w=p.deck.shift();K.flash=false;
+  $("#cWho").innerHTML=`<b>${esc(p.name)}</b>, word ${K.done+1} of ${WPT}<span class="tdots">${[...Array(WPT)].map((_,i)=>`<i class="${i<K.done?"ok":""}"></i>`).join("")}</span>`;
+  $("#cInfo").innerHTML="";const inp=$("#cInput");inp.value="";inp.readOnly=false;inp.focus();
+  const tok=++K.tok;K.speakUntil=Infinity;
+  const go=()=>{if(K&&K.tok===tok&&K.speakUntil===Infinity)K.speakUntil=0};
+  speak(sayForm(K.w),go);setTimeout(go,Math.min(3200,900+K.w.word.length*120))}
+$("#cSay").onclick=()=>{if(K&&K.phase==="play")speak(sayForm(K.w))};
+$$("#clock .ask").forEach(b=>b.onclick=()=>{if(K&&K.phase==="play")askInto(K.w,b.dataset.ask,$("#cInfo"))});
+$("#cForm").addEventListener("submit",e=>{e.preventDefault();
+  if(!K||K.phase!=="play"||K.paused||K.flash)return;
+  const inp=$("#cInput"),val=inp.value;if(!val.trim())return;
+  const w=K.w,p=K.p[K.turn],own=K.turn===K.track;
+  if(matches(val,w)){p.right++;K.done++;if(own)record(w,true,true);tones([880,1320],0.12,0.06);
+    $("#cFeedback").innerHTML=`<div class="feedback good pop"><h3>Correct: ${esc(w.word)}</h3></div>`;
+    if(K.done>=WPT)return clockEndTurn(false);
+    clockWord();
+  }else{K.turnMiss++;p.missed.push(w);if(own)record(w,false);bell();K.flash=true;inp.readOnly=true;
+    $("#cFeedback").innerHTML=`<div class="feedback bad shake"><h3>Not quite. It's:</h3>${letters(w.word)}</div>`;
+    const tok=K.tok;
+    setTimeout(()=>{if(!K||K.tok!==tok||K.phase!=="play"||$("#clock").hidden)return;if(K.paused){K.pending=true;return}clockWord()},2000)}
+});
+function clockEndTurn(out){const p=K.p[K.turn];K.phase="between";K.tok++;K.flash=false;
+  $("#cForm").hidden=true;$("#cPause").hidden=true;$("#cAsks").hidden=true;$("#cInfo").innerHTML="";try{speechSynthesis.cancel()}catch(e){}
+  $("#cWho").innerHTML=`<b>${esc(p.name)}</b>, ${out?"time's up":"turn complete"}<span class="tdots">${[...Array(WPT)].map((_,i)=>`<i class="${i<K.done?"ok":""}"></i>`).join("")}</span>`;
+  let gain=0;if(!out&&K.turnMiss===0){const before=p.bank;p.bank=Math.min(p.start,p.bank+5000);gain=Math.round((p.bank-before)/1000)}
+  clockCards();
+  if(gain){chime();const b=$("#cbon"+K.turn);b.textContent=`+${gain}s`;b.classList.add("pop")}
+  const msg=out?`<div class="feedback bad shake"><h3>Time's up!</h3><p>${esc(p.name)} spelled ${K.done} of ${WPT} this turn.</p></div>`
+    :`<div class="feedback good pop"><h3>Turn complete!</h3><p>${K.turnMiss===0?(gain?`All ${WPT} on the first try: +${gain} seconds.`:`All ${WPT} on the first try. Your clock is already full.`):`${K.turnMiss} miss${K.turnMiss>1?"es":""} this turn.`}</p></div>`;
+  $("#cFeedback").innerHTML=msg;
+  const n=$("#cNext");n.textContent=clockOutcome()!==null?"See who won":`Pass to ${K.p[1-K.turn].name}`;n.hidden=false;n.focus()}
+function clockOutcome(){if(K.turn===0)return null;const o=K.p.map(p=>p.bank<=0);
+  if(o[0]&&o[1])return"tie";if(o[0])return 1;if(o[1])return 0;return null}
+$("#cNext").onclick=()=>{$("#cNext").hidden=true;const r=clockOutcome();if(r!==null)return endClock(r);
+  const last=K.turn===0&&K.p[0].bank<=0;if(K.turn===1)K.round++;K.turn=1-K.turn;
+  clockHandoff(last?`${K.p[0].name}'s clock ran out. ${K.p[1].name}, finish your ${WPT} words to win. Run out and it's a tie.`:null)};
+$("#cPause").onclick=()=>{if(!K||K.phase!=="play"||K.paused)return;K.paused=true;try{speechSynthesis.cancel()}catch(e){}
+  $("#cplay").hidden=true;$("#cpaused").hidden=false;$("#cPause").hidden=true;paintClocks()};
+$("#cResume").onclick=()=>{K.paused=false;K.last=performance.now();$("#cpaused").hidden=true;$("#cplay").hidden=false;$("#cPause").hidden=false;
+  if(K.pending){K.pending=false;clockWord()}else if(!K.flash){$("#cInput").focus();speak(sayForm(K.w))}};
+document.addEventListener("visibilitychange",()=>{if(document.hidden&&K&&K.phase==="play"&&!K.paused&&!$("#clock").hidden)$("#cPause").click()});
+function endClock(r){K.phase="over";clearInterval(K.iv);
+  endGame(K.p,r,`${K.p[0].name} spelled ${K.p[0].right} right. ${K.p[1].name} spelled ${K.p[1].right} right. Game lasted ${K.round} round${K.round>1?"s":""}.`);
+  const uniq=a=>[...new Map(a.map(w=>[w.id,w])).values()];
+  const m0=uniq(K.p[0].missed),m1=uniq(K.p[1].missed);
+  if(m0.length||m1.length){const el=$("#duelMissed");el.hidden=false;
+    el.textContent=[m0.length?`${K.p[0].name} missed: ${m0.map(w=>w.word).join(", ")}.`:"",m1.length?`${K.p[1].name} missed: ${m1.map(w=>w.word).join(", ")}.`:""].filter(Boolean).join(" ")}
+  const mt=K.track===0?m0:K.track===1?m1:[];
+  if(mt.length){const b=$("#reviewBtn");b.hidden=false;b.textContent=`Practice ${K.p[K.track].name}'s misses`;b.onclick=()=>startBee(mt)}}
+$("#rematch").onclick=startPicked;
+$("#changePlayers").onclick=openDuel;
+$("#startDuel").onclick=startPicked;
+
+/* ---------- two players: letter relay ---------- */
+let RL=null;
+function relayDeck(){const pool=listFor(cfg().lists[0]);return pickRound(pool,pool.length)}
+function startRelay(){const c=cfg();
+  RL={track:c.track,deck:relayDeck(),starter:0,wordNo:0,fresh:null,over:false,
+      p:[0,1].map(i=>({name:c.names[i],misses:0,right:0,max:c.max,unit:"letters right"}))};
+  show("relay");relayWord()}
+function relayWord(){
+  if(!RL.deck.length)RL.deck=relayDeck();
+  const w=RL.deck.shift();RL.w=w;RL.chars=[...w.word];RL.pos=0;RL.marks=[];RL.done=false;RL.fresh=null;
+  RL.turn=RL.starter;RL.starter=1-RL.starter;RL.wordNo++;
+  $("#relayRound").textContent=`Word ${RL.wordNo} · ${LISTNAME[cfg().lists[0]]}`;$("#relayInfo").innerHTML="";$("#relayFeedback").innerHTML="";$("#relayNext").hidden=true;
+  drawRelay();speak(sayForm(w))}
+function drawRelay(anim){
+  [0,1].forEach(i=>{const el=$("#r"+i);el.innerHTML=gcard(RL.p[i],RL.fresh===i,anim&&RL.fresh===i);el.classList.toggle("active",RL.turn===i&&!RL.done);el.classList.toggle("out",RL.p[i].misses>=RL.p[i].max)});
+  const n=RL.chars.length,box=$("#rslots");
+  box.style.setProperty("--slot",Math.max(18,Math.min(42,Math.floor(((box.parentElement.clientWidth||340)-32)/n)-3))+"px");
+  box.innerHTML=RL.chars.map((c,i)=>{const m=RL.marks[i];
+    if(m)return `<span class="slot blank filled ${m.ok?"":"wrong"}" title="${esc(RL.p[m.by].name)}">${esc(c)}</span>`;
+    return `<span class="slot blank${i===RL.pos&&!RL.done?" next":""}"></span>`}).join("");
+  const who=RL.p[RL.turn];
+  $("#relayWho").innerHTML=RL.done?"Word complete":`<b>${esc(who.name)}</b>, pick letter ${RL.pos+1} of ${n}`;
+  $$("#kbd .key").forEach(k=>k.disabled=RL.done||RL.over)}
+function relayKey(ch){
+  if(!RL||RL.done||RL.over||$("#relay").hidden)return;
+  const t=RL.chars[RL.pos].toLowerCase(),ok=ch===t||(t==="ñ"&&ch==="n"),p=RL.p[RL.turn];
+  RL.marks[RL.pos]={by:RL.turn,ok};RL.fresh=null;
+  if(ok){p.right++;tones([988],0.12,0);$("#relayFeedback").innerHTML=""}
+  else{p.misses++;bell();RL.fresh=RL.turn;if(RL.turn===RL.track)record(RL.w,false);
+    const left=p.max-p.misses;
+    $("#relayFeedback").innerHTML=`<div class="feedback bad shake"><div class="missrow">${gallows(p.misses,p.max,true,true)}<h3>${esc(p.name)} picked “${esc(ch)}”. It's “${esc(RL.chars[RL.pos])}”.</h3></div><p>${left<=0?"That's the last piece!":left===1?"1 miss left.":left+" misses left."}</p></div>`}
+  RL.pos++;
+  if(p.misses>=p.max){RL.over=true;RL.done=true;RL.marks=RL.chars.map((c,i)=>RL.marks[i]||{by:RL.turn,ok:true});drawRelay(true);
+    const n=$("#relayNext");n.textContent="See who won";n.hidden=false;n.focus();return}
+  if(RL.pos>=RL.chars.length){RL.done=true;drawRelay(!ok);
+    const clean=RL.marks.every(m=>m.ok);if(clean)chime();
+    $("#relayFeedback").insertAdjacentHTML("beforeend",`<div class="feedback good pop"><h3>${clean?"Perfect word!":"Word complete"}</h3>${letters(RL.w.word)}</div>`);
+    const n=$("#relayNext");n.textContent="Next word";n.hidden=false;n.focus();return}
+  RL.turn=1-RL.turn;drawRelay(!ok)}
+$("#relayNext").onclick=()=>{if(RL.over){const r=RL.p[0].misses>=RL.p[0].max?1:0;
+    return endGame(RL.p,r,`${RL.p[0].name} got ${RL.p[0].right} letters right. ${RL.p[1].name} got ${RL.p[1].right}.`)}
+  relayWord()};
+(function buildKbd(){$("#kbd").innerHTML=["qwertyuiop","asdfghjkl","zxcvbnm"].map(r=>`<div class="krow">${[...r].map(c=>`<button class="key" data-k="${c}">${c}</button>`).join("")}</div>`).join("");
+  $$("#kbd .key").forEach(k=>k.onclick=()=>relayKey(k.dataset.k))})();
+document.addEventListener("keydown",e=>{if(!$("#relay").hidden&&/^[a-zñ]$/i.test(e.key)&&!e.metaKey&&!e.ctrlKey){e.preventDefault();relayKey(e.key.toLowerCase())}});
+$("#relayHear").onclick=()=>speak(sayForm(RL.w));
+$$("#relay .ask").forEach(b=>b.onclick=()=>askInto(RL.w,b.dataset.ask,$("#relayInfo")));
+$("#goDuel").onclick=openDuel;
+
+/* ---------- sound check ---------- */
+const hasSpeech=()=>!!(window.speechSynthesis&&typeof SpeechSynthesisUtterance!=="undefined");
+const inAppBrowser=()=>/; wv\)|FBAN|FBAV|Instagram|Line\//i.test(navigator.userAgent);
+function browserName(){const u=navigator.userAgent;if(inAppBrowser())return"A browser built into an app";if(/SamsungBrowser/i.test(u))return"Samsung Internet";if(/EdgA?\//i.test(u))return"Edge";if(/CriOS|Chrome\//i.test(u))return"Chrome";if(/Firefox|FxiOS/i.test(u))return"Firefox";if(/Safari/i.test(u))return"Safari";return"Unknown"}
+let sndExtra="";
+function soundReport(extra){if(extra)sndExtra=extra;extra=sndExtra;
+  let voices=[];try{voices=hasSpeech()?speechSynthesis.getVoices():[]}catch(e){}
+  const en=voices.filter(v=>/^en/i.test(v.lang));if(hasSpeech())pickVoice();
+  const rows=[
+    ["Browser",browserName()],
+    ["Can read words aloud",hasSpeech()?"Yes":"No"],
+    ["English voices on this phone",hasSpeech()?String(en.length):"None"],
+    ["Voice Bee Ready uses",voice?`${voice.name} (${voice.localService?"stored on the phone":"needs internet"})`:"None"],
+    ["Beeps and chimes",(window.AudioContext||window.webkitAudioContext)?(S.muted?"Supported, but switched off in Bee Ready":"Supported"):"Not supported"]];
+  $("#sndReport").innerHTML=rows.map(r=>`<li>${esc(r[0])}: <b>${esc(r[1])}</b></li>`).join("");
+  const tips=[];
+  if(!hasSpeech()||inAppBrowser())tips.push("Open Bee Ready in Chrome (or Safari on an iPhone or iPad). Browsers built into other apps often can't speak.");
+  if(hasSpeech()&&!en.length)tips.push("Your phone has no English voice installed. In your phone's Settings, search for <b>Text-to-speech</b>, choose Google's speech engine, and download an English (United States) voice.");
+  if(hasSpeech()&&en.length)tips.push("If the beep plays but the voice doesn't, open Settings, search for <b>Text-to-speech</b>, and press Play there. If that's silent too, the problem is the phone's voice engine, not Bee Ready. Choosing Google's speech engine usually fixes it.");
+  if(S.muted)tips.push("Beeps are switched off. Tap the speaker button at the top of the home screen to turn them on.");
+  if(extra)tips.unshift(extra);
+  $("#sndAdviceCard").hidden=!tips.length;$("#sndAdvice").innerHTML=tips.map(t=>`<p>${t}</p>`).join("")}
+function openSound(){sndExtra="";show("sound");$("#sndResult").innerHTML="";soundReport();setTimeout(soundReport,800)}
+$("#goSound").onclick=openSound;$("#goSound2").onclick=openSound;
+$("#testBeep").onclick=()=>{const was=S.muted;S.muted=false;chime();S.muted=was;
+  $("#sndResult").innerHTML="<small>Beep test</small>You should have heard three rising notes. If not, check the media volume and that the phone isn't on silent."};
+$("#testVoice").onclick=()=>{const box=$("#sndResult");
+  if(!hasSpeech()){box.innerHTML="<small>Voice test</small>This browser has no speech feature at all.";soundReport();return}
+  box.innerHTML="<small>Voice test</small>Asking the phone to speak…";let started=false,ended=false;
+  try{if(speechSynthesis.speaking||speechSynthesis.pending)speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance("Bee Ready sound check. Please spell: cemetery.");u.rate=0.82;u.lang=voice?voice.lang:"en-US";if(voice)u.voice=voice;
+    u.onstart=()=>{started=true;box.innerHTML="<small>Voice test</small>The phone says it's speaking now."};
+    u.onend=()=>{ended=true;box.innerHTML="<small>Voice test</small>The phone says it finished speaking. If you heard nothing, turn up the media volume and try again."};
+    u.onerror=e=>{ended=true;box.innerHTML=`<small>Voice test</small>The phone reported an error: <b>${esc(e.error||"unknown")}</b>.`;soundReport("The voice engine reported an error. Try choosing Google's speech engine in Text-to-speech settings.")};
+    curUtt=u;setTimeout(()=>speechSynthesis.speak(u),60);
+    setTimeout(()=>{if(!started&&!ended){box.innerHTML="<small>Voice test</small>Nothing happened after 4 seconds. The phone accepted the request but never started speaking.";soundReport("The phone's voice engine didn't respond. Open Settings, search for Text-to-speech, and press Play to test it there.")}},4000)
+  }catch(e){box.innerHTML=`<small>Voice test</small>Error: ${esc(e.message)}`}};
+function checkVoiceBanner(){let n=0;try{n=hasSpeech()?speechSynthesis.getVoices().length:0}catch(e){}$("#noVoiceBox").hidden=hasSpeech()&&n>0}
+setTimeout(checkVoiceBanner,1500);
+
+/* ---------- backup and restore ---------- */
+const BK="BEE1:";
+function toCode(obj){const b=new TextEncoder().encode(JSON.stringify(obj));let s="";b.forEach(x=>s+=String.fromCharCode(x));return BK+btoa(s)}
+function fromCode(t){t=(t||"").replace(/\s+/g,"");if(t.startsWith("{"))return JSON.parse(t);if(!t.startsWith(BK))throw new Error("not a Bee Ready code");
+  const s=atob(t.slice(BK.length)),b=Uint8Array.from(s,c=>c.charCodeAt(0));return JSON.parse(new TextDecoder().decode(b))}
+function summarize(d){const st=d.stats||{},ids=Object.keys(st),gold=ids.filter(k=>(st[k].s||0)>=2).length,du=d.duel||{},w=du.wins||[0,0],nm=du.names||["Player 1","Player 2"];
+  return `${d.name?esc(d.name)+": ":""}${gold} mastered, ${ids.length} tried, ${d.honey||0} honey.`+(w[0]+w[1]+(du.ties||0)?` Two-player series: ${esc(nm[0])} ${w[0]}, ${esc(nm[1])} ${w[1]}${du.ties?`, ties ${du.ties}`:""}.`:"")}
+let bkPending=null;
+function openBackup(){show("backup");const code=toCode(S);$("#bkOut").value=code;$("#bkSummary").innerHTML=summarize(S);
+  $("#bkFile").hidden=window.self!==window.top; // embedded views can't save files
+  $("#bkCopyNote").textContent="";$("#bkIn").value="";$("#bkResult").innerHTML="";$("#bkApply").hidden=true;bkPending=null}
+$("#goBackup").onclick=openBackup;
+$("#bkCopy").onclick=async()=>{const t=$("#bkOut");let ok=false;
+  try{await navigator.clipboard.writeText(t.value);ok=true}catch(e){}
+  if(!ok){try{t.focus();t.select();ok=document.execCommand("copy")}catch(e){}}
+  $("#bkCopyNote").textContent=ok?"Copied. Now paste it into Bee Ready on the other device.":"Couldn't copy automatically. Press and hold the code, choose Select all, then Copy."};
+$("#bkFile").onclick=()=>{try{const a=document.createElement("a"),d=new Date().toISOString().slice(0,10);
+  a.href=URL.createObjectURL(new Blob([$("#bkOut").value],{type:"text/plain"}));a.download=`bee-ready-backup-${d}.txt`;document.body.appendChild(a);a.click();a.remove();
+  $("#bkCopyNote").textContent="Saved to your downloads."}catch(e){$("#bkCopyNote").textContent="This view can't save files. Use Copy code instead."}};
+function checkBackup(text){const r=$("#bkResult");bkPending=null;$("#bkApply").hidden=true;
+  let d;try{d=fromCode(text)}catch(e){r.innerHTML="<small>That didn't work</small>That isn't a Bee Ready backup code. Make sure you copied all of it.";return}
+  if(!d||typeof d!=="object"||typeof d.stats!=="object"){r.innerHTML="<small>That didn't work</small>The code is missing the saved progress.";return}
+  bkPending=d;r.innerHTML="<small>This backup has</small>"+summarize(d)+"<br>Restoring replaces everything saved on this device.";$("#bkApply").hidden=false}
+$("#bkCheck").onclick=()=>checkBackup($("#bkIn").value);
+$("#bkPick").onclick=()=>$("#bkFileIn").click();
+$("#bkFileIn").onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{$("#bkIn").value=t.trim();checkBackup(t)});e.target.value=""};
+$("#bkApply").onclick=()=>{if(!bkPending)return;S=Object.assign(blankState(),bkPending);if(!S.num)S.num=Math.floor(Math.random()*240)+10;if(!Array.isArray(S.focus))S.focus=[...FOCUS_START];save();setMute();
+  $("#bkApply").hidden=true;$("#bkResult").innerHTML="<small>Restored</small>"+summarize(S);$("#bkOut").value=toCode(S);$("#bkSummary").innerHTML=summarize(S);bkPending=null};
+
+$("#goBee").onclick=()=>startBee();
+$("#goGap").onclick=startGap;
+$("#goCards").onclick=()=>openCards(0);
+$("#goTricky").onclick=()=>startBee(list().filter(tricky));
+
+setMute();renderHome();
+</script>
+
+<script>
+// Offline support: cache the app so it opens with no signal
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+  addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+</script>
+</body>
+</html>
